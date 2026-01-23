@@ -64,18 +64,24 @@ def main():
     for arg in sys.argv:
         if arg == "--dataset" and len(sys.argv) > sys.argv.index(arg) + 1:
             dataset_file = sys.argv[sys.argv.index(arg) + 1]
+            load_data = lire_csv(dataset_file)
+            if not load_data:
+                return 1
         if arg == "--split" and len(sys.argv) > sys.argv.index(arg) + 1:
             train_ratio = float(sys.argv[sys.argv.index(arg) + 1])
             print(f"> splitting dataset '{dataset_file}' into train, validation & test sets with train ratio = {train_ratio}")
-            splitting_phase(dataset_file, train_ratio)
+            splitting_phase(load_data, train_ratio)
             return 1
         if arg == "--predict" and len(sys.argv) > sys.argv.index(arg) + 1:
             model_file = sys.argv[sys.argv.index(arg) + 1]
             print(f"> loading model '{model_file}' from disk...")
-            prediction_phase(dataset_file, model_file)
+            load_model = lire_csv(model_file)
+            if not load_model:
+                return 1
+            prediction_phase(load_data, load_model)
             return 1
         if arg == "--dataset" and len(sys.argv) > sys.argv.index(arg) + 1:
-            training_phase(dataset_file)
+            training_phase(load_data)
     return 1
 
 if __name__ == "__main__":
