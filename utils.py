@@ -1,0 +1,30 @@
+import csv
+
+def lire_csv(fichier):
+    """
+    Read a CSV file and return its content as a list of lists.
+    """
+
+    tableau = []
+    try:
+        with open(fichier, "r", encoding="utf-8") as f:
+            lecteur = csv.reader(f, delimiter=",")
+            for ligne in lecteur:
+                tableau.append(ligne)
+        return tableau
+    except FileNotFoundError:
+        print(f"Error: the file {fichier} does not exist.")
+        return []
+
+def ecrire_csv(fichier, data):
+    """
+    Write data (list of lists) to a CSV file.
+    """
+
+    try:
+        with open(fichier, "w", newline='', encoding="utf-8") as f:
+            ecrivain = csv.writer(f, delimiter=",")
+            for ligne in data:
+                ecrivain.writerow(ligne)
+    except Exception as e:
+        print(f"Error while writing into {fichier} : {e}")

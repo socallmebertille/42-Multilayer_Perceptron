@@ -14,7 +14,7 @@
 <ul class="list-disc pl-4 my-0">
   <li class="my-0"><a href="#overview">Overview</a></li>
   <ul class="list-disc pl-4 my-0">
-    <li class="my-0"><a href="#"></a></li>
+    <li class="my-0"><a href="#install-a-great-environment">Install a great environment</a></li>
   </ul>
   <li class="my-0"><a href="#"></a>
   <ul class="list-disc pl-4 my-0">
@@ -24,8 +24,14 @@
 </ul>
 
 <h2>Overview</h2>
-<h3></h3>
+<h3>Install a great environment</h3>
 
+```bash
+uv venv                                         # creation
+source .venv/bin/activate                       # activation
+
+uv pip install numpy                            # installation of dependencies
+```
 
 <h2></h2>
 <h3></h3>
