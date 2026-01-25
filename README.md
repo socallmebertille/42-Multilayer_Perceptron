@@ -16,7 +16,7 @@
   <ul class="list-disc pl-4 my-0">
     <li class="my-0"><a href="#install-a-great-virtual-environment">Install a great virtual environment</a></li>
   </ul>
-  <li class="my-0"><a href="#build-a-multilayer-perceptron-(mlp)">Build a Multilayer Perceptron (MLP)</a>
+  <li class="my-0"><a href="#build-a-multilayer-perceptron-mlp">Build a Multilayer Perceptron (MLP)</a>
   <ul class="list-disc pl-4 my-0">
     <li class="my-0"><a href="#usage">Usage</a></li>
   </ul>
