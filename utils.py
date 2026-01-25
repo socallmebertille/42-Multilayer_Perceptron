@@ -10,6 +10,7 @@ def lire_csv(fichier):
         with open(fichier, "r", encoding="utf-8") as f:
             lecteur = csv.reader(f, delimiter=",")
             for ligne in lecteur:
+                ligne = [float(valeur) if valeur.replace('.', '', 1).isdigit() else valeur for valeur in ligne]
                 tableau.append(ligne)
         return tableau
     except FileNotFoundError:
@@ -22,7 +23,7 @@ def ecrire_csv(fichier, data):
     """
 
     try:
-        with open(fichier, "w", newline='', encoding="utf-8") as f:
+        with open(str(fichier), "w", newline='', encoding="utf-8") as f:
             ecrivain = csv.writer(f, delimiter=",")
             for ligne in data:
                 ecrivain.writerow(ligne)
