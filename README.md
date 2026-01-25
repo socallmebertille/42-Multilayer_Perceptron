@@ -43,12 +43,12 @@ graph LR
     A[📊 Raw Data] --> B[📏 Normalization]
     B --> C[✂️ Split train/validation/test]
     C --> D[✂️ Batching]
-    D --> E[🎯 Forward pass (prediction)]
+    D --> E[🎯 Forward pass = prediction]
     E --> F[📈 Loss function]
     F --> G{Threshold or Early stopping ?}
     G --> |Yes| H[✅ Best Model]
-    G --> |No| I[Backpropagation (gradients)]
-    I --> J[Gradient descent (MAJ gradients)]
+    G --> |No| I[Backpropagation = gradient]
+    I --> J[Gradient descent = MAJ gradients]
 ```
 
 <h2>Build a Multilayer Perceptron (MLP)</h2>
