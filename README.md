@@ -15,6 +15,7 @@
   <li class="my-0"><a href="#overview">Overview</a></li>
   <ul class="list-disc pl-4 my-0">
     <li class="my-0"><a href="#install-a-great-virtual-environment">Install a great virtual environment</a></li>
+    <li class="my-0"><a href="#mathematical-concept">Mathematical concept</a></li>
   </ul>
   <li class="my-0"><a href="#build-a-multilayer-perceptron-mlp">Build a Multilayer Perceptron (MLP)</a>
   <ul class="list-disc pl-4 my-0">
@@ -31,6 +32,23 @@ uv venv                                         # creation
 source .venv/bin/activate                       # activation
 
 uv pip install numpy                            # installation of dependencies
+```
+
+<h3>Mathematical concept</h3>
+
+#### Standard ML Pipeline
+
+```mermaid
+graph LR
+    A[📊 Raw Data] --> B[📏 Normalization]
+    B --> C[✂️ Split train/validation/test]
+    C --> D[✂️ Batching]
+    D --> E[🎯 Forward pass (prediction)]
+    E --> F[📈 Loss function]
+    F --> G{Threshold or Early stopping ?}
+    G --> |Yes| H[✅ Best Model]
+    G --> |No| I[Backpropagation (gradients)]
+    I --> J[Gradient descent (MAJ gradients)]
 ```
 
 <h2>Build a Multilayer Perceptron (MLP)</h2>
