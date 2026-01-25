@@ -66,64 +66,82 @@ graph LR
 
 Each layer applies a weighted sum + activation :
 
-**1. Linear transformation**
+**1. Forward Pass**
 
-Each neuron computes a weighted sum of its inputs plus a bias:
+For each batch, for each layer $l$ :
 
-$$z^{(l)} = W^{(l)} a^{(l-1)} + b^{(l)}$$
-
-Where:
-- $a^{(l-1)}$ : output (activation) of the previous layer
-- $W^{(l)}$ : weight matrix of layer $l$
-- $b^{(l)}$ : bias vector
-- $z^{(l)}$ : pre-activation values
-
-**2. Activation function**
-
-A non-linear function is applied to introduce non-linearity:
-
-$$a^{(l)} = f(z^{(l)})$$
-
-Common activation functions:
-
-**Sigmoid:** $\sigma(x) = \frac{1}{1+e^{-x}}$
-
-**ReLU:** $\text{ReLU}(x) = \max(0, x)$
-
-**Tanh:** $\tanh(x) = \frac{e^x - e^{-x}}{e^x + e^{-x}}$
-
-**3. Forward propagation**
-
-By chaining all layers, the network produces a prediction:
-
-$$\hat{y} = a^{(L)}$$
-
-Where $L$ is the last layer of the network.
-
-**4. Loss function**
-
-The loss measures the error between the prediction $\hat{y}$ and the true value $y$.
-
-Example: Mean Squared Error (MSE)
-
-$$L(y, \hat{y}) = \frac{1}{n} \sum_{i=1}^{n} (y_i - \hat{y}_i)^2$$
-
-**5. Backpropagation**
-
-Gradients are computed using the chain rule to update weights and biases:
-
-$$\frac{\partial L}{\partial W^{(l)}}, \quad \frac{\partial L}{\partial b^{(l)}}$$
-
-**6. Gradient descent update**
-
-Parameters are updated iteratively:
-
-$$W^{(l)} = W^{(l)} - \eta \cdot \frac{\partial L}{\partial W^{(l)}}$$
-
-$$b^{(l)} = b^{(l)} - \eta \cdot \frac{\partial L}{\partial b^{(l)}}$$
+$$a^{(l)} = f(z^{(l)}) = f(W^{(l)} a^{(l-1)} + b^{(l)})$$
 
 Where:
-- $\eta$ is the learning rate
+- $l$ = layer
+- $W^{(l)}$ = weight matrix
+- $a^{(0)}$ = $x$ (input)
+- $a^{(l-1)}$ = output of previous layer
+- $b^{(l)}$ = bias
+- $f$ = activation function (ReLU, sigmoid…)
+
+> Each layer applies a weighted sum + activation
+
+**Activation Functions:**
+
+| Components | Sigmoid | Softmax | Linear (ReLU) |
+| --- | --- | --- | --- |
+| Output range | (0, 1) | (0, 1), sum to 1 | [0, +∞) |
+| Use case | Binary / multi-label independent | Multi-class (mutually exclusive) | Hidden layers |
+| Output structure | Single probability per neuron | Probability distribution | Non-linear activation |
+| Advantages | Interpretable | Probabilistic | Simple, fast |
+| Disadvantages | Saturation | Coupled to CE | Dead neurons |
+| **Formula** | $\sigma(z) = \frac{1}{1 + e^{-z}}$ | $\text{softmax}(z_K) = \frac{e^{z_K}}{\sum_{j=1}^K e^{z_j}}$ | $\text{ReLU}(z) = \max(0, z)$ |
+
+**Usage Rules:**
+- **Hidden layers**: ReLU (standard), sometimes Sigmoid/Tanh
+- **Output layer**:
+  - Regression: Linear (no activation)
+  - Binary classification: Sigmoid
+  - Multi-class classification: Softmax
+
+**2. Loss Function**
+
+Measures the error: $L(\hat{y}, y)$
+
+| Problem type | Loss function | Formula |
+| --- | --- | --- |
+| Binary classification | Binary Cross-Entropy | $\text{BCE} = -[y \log(\hat{y}) + (1-y) \log(1-\hat{y})]$ |
+| Multi-class classification | Categorical Cross-Entropy | $\text{CCE} = -\sum_i y_i \log(\hat{y}_i)$ |
+| Regression | Mean Squared Error | $\text{MSE} = \frac{1}{2m} \sum_i (\hat{y}_i - y_i)^2$ |
+
+**3. Backpropagation**
+
+Computes how each weight contributed to the error, by propagating gradients from output to input.
+
+One layer: $a^{(l)} = f(z^{(l)})$
+
+Layer error:
+$$\delta^{(l)} = \frac{\partial L}{\partial z^{(l)}}$$
+
+**Gradient Computation:**
+
+| Element | Gradient |
+| --- | --- |
+| **Output layer** | $\delta^{(L)} = \hat{y} - y$ (Softmax+CE or Sigmoid+BCE) |
+| **Hidden layer** | $\delta^{(l)} = (W^{(l+1)T} \delta^{(l+1)}) \odot f'(z^{(l)})$ |
+
+**4. Gradient Descent**
+
+| Element | Formula |
+| --- | --- |
+| Weight gradient | $\frac{\partial L}{\partial W^{(l)}} = \delta^{(l)} a^{(l-1)T}$ |
+| Bias gradient | $\frac{\partial L}{\partial b^{(l)}} = \delta^{(l)}$ |
+| Update | $W^{(l)} \leftarrow W^{(l)} - \eta \frac{\partial L}{\partial W^{(l)}}$ |
+
+New weights = old weights - (learning rate × weight gradient)
+
+**5. Stopping Criteria**
+
+- Maximum epochs reached
+- Loss < minimal threshold (e.g., loss < 0.001)
+- **Early stopping** (validation loss plateaus)
+- Gradient ≈ 0 (convergence reached)
 
 
 <h2>Build a Multilayer Perceptron (MLP)</h2>
