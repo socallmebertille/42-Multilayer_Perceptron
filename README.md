@@ -33,5 +33,12 @@ source .venv/bin/activate                       # activation
 uv pip install numpy                            # installation of dependencies
 ```
 
-<h2></h2>
-<h3></h3>
+<h2>Build a Multilayer Perceptron (MLP)</h2>
+<h3>Usage</h3>
+
+```bash
+python mlp.py --help
+python mlp.py --dataset data.csv --split 0.6,0.3
+python mlp.py --dataset datasets/train_set.csv
+python mlp.py --dataset datasets/test_set.csv --predict saved_model.npy
+```
