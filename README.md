@@ -47,8 +47,8 @@ graph LR
     E --> F[📈 Loss function]
     F --> G{Threshold or Early stopping ?}
     G --> |Yes| H[✅ Best Model]
-    G --> |No| I[Backpropagation = gradient]
-    I --> J[Gradient descent = MAJ gradients]
+    G --> |No| I[🔄 Backpropagation = gradient]
+    I --> J[🔄 Gradient descent = MAJ gradients]
 ```
 
 <h2>Build a Multilayer Perceptron (MLP)</h2>
