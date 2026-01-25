@@ -14,17 +14,17 @@
 <ul class="list-disc pl-4 my-0">
   <li class="my-0"><a href="#overview">Overview</a></li>
   <ul class="list-disc pl-4 my-0">
-    <li class="my-0"><a href="#install-a-great-environment">Install a great environment</a></li>
+    <li class="my-0"><a href="#install-a-great-virtual-environment">Install a great virtual environment</a></li>
   </ul>
-  <li class="my-0"><a href="#"></a>
+  <li class="my-0"><a href="#build-a-multilayer-perceptron-(mlp)">Build a Multilayer Perceptron (MLP)</a>
   <ul class="list-disc pl-4 my-0">
-    <li class="my-0"><a href="#"></a></li>
+    <li class="my-0"><a href="#usage">Usage</a></li>
   </ul>
   </li>
 </ul>
 
 <h2>Overview</h2>
-<h3>Install a great environment</h3>
+<h3>Install a great virtual environment</h3>
 
 ```bash
 uv venv                                         # creation
