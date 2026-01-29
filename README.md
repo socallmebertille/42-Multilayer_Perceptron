@@ -19,6 +19,7 @@
   </ul>
   <li class="my-0"><a href="#build-a-multilayer-perceptron-mlp">Build a Multilayer Perceptron (MLP)</a>
   <ul class="list-disc pl-4 my-0">
+    <li class="my-0"><a href="#architecture">Architecture</a></li>
     <li class="my-0"><a href="#usage">Usage</a></li>
   </ul>
   </li>
@@ -145,11 +146,47 @@ New weights = old weights - (learning rate × weight gradient)
 
 
 <h2>Build a Multilayer Perceptron (MLP)</h2>
+<h3>Architecture</h3>
+
+```
+multilayer-perceptron/
+├── mlp.py                 # Main entry point (lightweight)
+├── src/
+│   ├── split_data.py
+│   ├── train.py
+│   ├── predict.py
+│   ├── network.py         # Network architecture
+│   ├── layers.py          # Definition of layers
+│   └── utils.py
+├── config/
+│   └── network_config.txt # Exemple de config
+└── datasets/
+```
+
 <h3>Usage</h3>
 
 ```bash
-python mlp.py --help
-python mlp.py --dataset data.csv --split 0.6,0.3
-python mlp.py --dataset datasets/train_set.csv
-python mlp.py --dataset datasets/test_set.csv --predict saved_model.npy
+usage: mlp.py [-h] --dataset DATASET [--split SPLIT]
+              [--predict PREDICT] [--config CONFIG]
+              [--layers LAYERS [LAYERS ...]] [--epochs EPOCHS]
+              [--learning-rate LEARNING_RATE] [--batch-size BATCH_SIZE]
+              [--loss {binary_crossentropy,categorical_crossentropy}]
+
+Multilayer Perceptron for binary classification
+
+options:
+  -h, --help            show this help message and exit
+  --dataset DATASET     Path to dataset CSV file
+  --split SPLIT         Split ratio (format: train,valid). Ex: 0.7,0.15
+  --predict PREDICT     Path to saved model for prediction
+  --config CONFIG       Path to config file (.txt)
+  --layers LAYERS [LAYERS ...]
+                        Hidden layer sizes. Ex: --layers 24 24 24
+  --epochs EPOCHS       Number of training epochs
+  --learning-rate LEARNING_RATE
+                        Learning rate
+  --batch-size BATCH_SIZE
+                        Batch size
+  --loss {binary_crossentropy,categorical_crossentropy}
+                        Loss function
 ```

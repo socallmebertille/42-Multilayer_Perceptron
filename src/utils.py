@@ -29,3 +29,16 @@ def ecrire_csv(fichier, data):
                 ecrivain.writerow(ligne)
     except Exception as e:
         print(f"Error while writing into {fichier} : {e}")
+    return
+
+def binary_class(tab, class1, class2):
+    """
+    Convert the class labels in the dataset to binary format.
+    """
+
+    for i in range(len(tab)):
+        if tab[i] == class1:
+            tab[i] = 0
+        elif tab[i] == class2:
+            tab[i] = 1
+    return tab
