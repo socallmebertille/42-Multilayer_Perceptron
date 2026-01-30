@@ -187,6 +187,31 @@ def parse_arguments():
     
     return parser.parse_args()
 
+def parse_config_file(config_file):
+    if not Path(config_file).is_file():
+        print(f"Error: the config file {config_file} does not exist.")
+        return None
+    if not config_file.endswith('.txt'):
+        print("Error: the config file must have a .txt extension.")
+        return None
+    
+    config = {}
+    # with open(config_file, 'r', encoding='utf-8') as f:
+    #     for line in f:
+    #         key, value = line.strip().split('=')
+    #         key = key.strip()
+    #         value = value.strip()
+    #         if key == 'layers':
+    #             config[key] = list(map(int, value.split(',')))
+    #         elif key in ['epochs', 'batch_size']:
+    #             config[key] = int(value)
+    #         elif key == 'learning_rate':
+    #             config[key] = float(value)
+    #         elif key == 'loss':
+    #             config[key] = value
+
+    return config
+
 def main():
     """
     Multi-Layer Perceptron (MLP) for binary classification.

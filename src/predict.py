@@ -20,7 +20,7 @@ def prediction_phase(test_set, model_file):
     """
     
     x_test = test_set[:, 2:]
-    y_test = binary_class(test_set[:, 1:2], class1=0, class2=1)
+    y_test = binary_class(test_set[:, 1:2], 'B', 'M')
     nb_samples = x_test.shape[0]
 
     y_hat = np.zeros(nb_samples)  # Dummy predictions
