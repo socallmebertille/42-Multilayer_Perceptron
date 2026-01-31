@@ -1,6 +1,6 @@
 import numpy as np
 from pathlib import Path
-from src.utils import lire_csv, ecrire_csv
+from src.utils import ecrire_csv
 
 def splitting_phase(dataset_file, train_ratio):
     """
