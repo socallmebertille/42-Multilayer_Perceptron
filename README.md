@@ -153,14 +153,16 @@ multilayer-perceptron/
 ├── mlp.py                 # Main entry point (lightweight)
 ├── src/
 │   ├── split_data.py
-│   ├── train.py
-│   ├── predict.py
-│   ├── network.py         # Network architecture
 │   ├── layers.py          # Definition of layers
+│   ├── my_mlp.py          # Class MLP
 │   └── utils.py
 ├── config/
 │   └── network_config.txt # Exemple de config
-└── datasets/
+└── datasets/              # Created with the splitting flag
+    ├── test_set.csv
+    ├── train_set.csv
+    └── valid_set.csv
+
 ```
 
 <h3>Usage</h3>
