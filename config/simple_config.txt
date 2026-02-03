@@ -1,5 +1,5 @@
 [network]
-layers = 24,24,24
+layer = 24,24,24
 
 [training]
 epochs = 84

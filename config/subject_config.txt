@@ -1,13 +1,13 @@
 [network]
 input_size = 30
-layers = 24,24,24
+layer = 24,24,24
 output_size = 2
 activation_hidden = sigmoid
 activation_output = softmax
-weights_initializer = he_uniform
+weights_init = heUniform
 
 [training]
-loss = categorical_crossentropy
+loss = categoricalCrossentropy
 learning_rate = 0.0314
 batch_size = 8
 epochs = 84

@@ -17,7 +17,7 @@ class MyMLP:
         layers = []
 
         input_size = int(net_cfg['input_size'])
-        hidden_layers = net_cfg['layers']
+        hidden_layers = net_cfg['layer']
         output_size = int(net_cfg['output_size'])
 
         prev_size = input_size

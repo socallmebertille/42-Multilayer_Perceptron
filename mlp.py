@@ -24,50 +24,196 @@ def parse_arguments():
     # Training parameters
     parser.add_argument('--config', type=str,
                        help='Path to config file (.txt)')
-    parser.add_argument('--layers', nargs='+', type=int,
-                       help='Hidden layer sizes. Ex: --layers 24 24 24')
+    parser.add_argument('--layer', nargs='+', type=int,
+                       help='Hidden layer sizes. Ex: --layer 24 24 24')
     parser.add_argument('--epochs', type=int, default=100,
                        help='Number of training epochs')
-    parser.add_argument('--learning-rate', type=float, default=0.01,
+    parser.add_argument('--learning_rate', type=float, default=0.01,
                        help='Learning rate')
-    parser.add_argument('--batch-size', type=int, default=32,
+    parser.add_argument('--batch_size', type=int, default=32,
                        help='Batch size')
-    parser.add_argument('--loss', type=str, default='binary_crossentropy',
-                       choices=['binary_crossentropy', 'categorical_crossentropy'],
+    parser.add_argument('--loss', type=str, default='binaryCrossentropy',
+                       choices=['binaryCrossentropy', 'categoricalCrossentropy'],
                        help='Loss function')
+    parser.add_argument('--input_size', type=int,
+                       help='Input size (number of features)')
+    parser.add_argument('--output_size', type=int,
+                       help='Output size (number of classes)')
+    parser.add_argument('--activation_hidden', type=str, default='relu',
+                       help='Activation function for hidden layers')
+    parser.add_argument('--activation_output', type=str, default='sigmoid',
+                       help='Activation function for output layer')
+    parser.add_argument('--weights_init', type=str, default='heUniform',
+                       help='Weights initialization method')
     
     return parser.parse_args()
 
 
 def parse_config_file(path):
+    if not Path(path).exists():
+        raise FileNotFoundError(f"Config file not found: {path}")
+    
+    # Valeurs par défaut
+    default_config = {
+        'network': {
+            'input_size': None,  # Sera inféré du dataset
+            'layer': [24, 24],
+            'output_size': 1,
+            'activation_hidden': 'relu',
+            'activation_output': 'sigmoid',
+            'weights_init': 'heUniform'
+        },
+        'training': {
+            'epochs': 100,
+            'learning_rate': 0.01,
+            'batch_size': 32,
+            'loss': 'binaryCrossentropy'
+        }
+    }
+    
     config = {'network': {}, 'training': {}}
     section = None
 
-    with open(path) as f:
-        for line in f:
-            line = line.strip()
-            if not line or line.startswith('#'):
-                continue
+    try:
+        with open(path) as f:
+            for line_num, line in enumerate(f, 1):
+                line = line.strip()
+                if not line or line.startswith('#'):
+                    continue
 
-            if line.startswith('['):
-                section = line[1:-1]
-                continue
+                if line.startswith('['):
+                    section = line[1:-1]
+                    if section not in ['network', 'training']:
+                        raise ValueError(f"Unknown section [{section}]")
+                    continue
 
-            key, value = map(str.strip, line.split('=', 1))
+                if '=' not in line:
+                    raise ValueError(f"Invalid syntax (expected 'key = value')")
 
-            if section == 'network':
-                if key == 'layers':
-                    value = list(map(int, value.split(',')))
-                config['network'][key] = value
+                key, value = map(str.strip, line.split('=', 1))
 
-            elif section == 'training':
-                if key in ('epochs', 'batch_size'):
-                    value = int(value)
-                elif key == 'learning_rate':
-                    value = float(value)
-                config['training'][key] = value
+                if section == 'network':
+                    if key == 'layer':
+                        layer = [int(x.strip()) for x in value.split(',')]
+                        if not layer or any(l <= 0 for l in layer):
+                            raise ValueError(f"layers must be positive integers, got {value}")
+                        config['network'][key] = layer
+                        
+                    elif key == 'input_size':
+                        size = int(value)
+                        if size <= 0:
+                            raise ValueError(f"input_size must be > 0, got {size}")
+                        config['network'][key] = size
+                        
+                    elif key == 'output_size':
+                        size = int(value)
+                        if size <= 0:
+                            raise ValueError(f"output_size must be > 0, got {size}")
+                        config['network'][key] = size
+                        
+                    elif key == 'activation_hidden':
+                        valid = ['sigmoid', 'relu', 'tanh']
+                        if value not in valid:
+                            raise ValueError(f"activation_hidden must be one of {valid}, got '{value}'")
+                        config['network'][key] = value
+                        
+                    elif key == 'activation_output':
+                        valid = ['sigmoid', 'softmax', 'linear']
+                        if value not in valid:
+                            raise ValueError(f"activation_output must be one of {valid}, got '{value}'")
+                        config['network'][key] = value
+                        
+                    elif key == 'weights_init':
+                        valid = ['heUniform', 'heNormal', 'xavierUniform', 'random']
+                        if value not in valid:
+                            raise ValueError(f"weights_init must be one of {valid}, got '{value}'")
+                        config['network'][key] = value
+                    else:
+                        print(f"Warning: Unknown network parameter '{key}' ignored")
 
-    print(f"> configuration loaded from '{path}': \n{config}")
+                elif section == 'training':
+                    if key == 'epochs':
+                        epochs = int(value)
+                        if epochs <= 0:
+                            raise ValueError(f"epochs must be > 0, got {epochs}")
+                        config['training'][key] = epochs
+                        
+                    elif key == 'learning_rate':
+                        lr = float(value)
+                        if lr <= 0 or lr > 1:
+                            raise ValueError(f"learning_rate must be in (0, 1], got {lr}")
+                        config['training'][key] = lr
+                        
+                    elif key == 'batch_size':
+                        batch = int(value)
+                        if batch <= 0:
+                            raise ValueError(f"batch_size must be > 0, got {batch}")
+                        config['training'][key] = batch
+                        
+                    elif key == 'loss':
+                        valid = ['binaryCrossentropy', 'categoricalCrossentropy', 'mse']
+                        if value not in valid:
+                            raise ValueError(f"loss must be one of {valid}, got '{value}'")
+                        config['training'][key] = value
+                    else:
+                        print(f"Warning: Unknown training parameter '{key}' ignored")
+
+    except ValueError as e:
+        raise ValueError(f"Error parsing config file at line {line_num}: {e}")
+    except Exception as e:
+        raise ValueError(f"Unexpected error at line {line_num}: {e}")
+    
+    # Fusionner avec les valeurs par défaut (pour les clés manquantes)
+    for section in ['network', 'training']:
+        for key, default_value in default_config[section].items():
+            if key not in config[section]:
+                config[section][key] = default_value
+                print(f"Info: Using default {section}.{key} = {default_value}")
+    
+    print(f"> configuration loaded from '{path}'")
+    return config
+
+def validate_config(config, X_shape):
+    """Valide la cohérence globale de la config avec les données"""
+    errors = []
+    
+    # Validation réseau
+    if config['network']['input_size'] is None:
+        config['network']['input_size'] = X_shape[1]
+    elif config['network']['input_size'] != X_shape[1]:
+        errors.append(
+            f"input_size ({config['network']['input_size']}) "
+            f"!= dataset features ({X_shape[1]})"
+        )
+    
+    # Validation cohérence loss / activation output
+    if config['training']['loss'] == 'categoricalCrossentropy':
+        if config['network']['activation_output'] != 'softmax':
+            errors.append(
+                "categoricalCrossentropy requires softmax output activation, "
+                f"got '{config['network']['activation_output']}'"
+            )
+        if config['network']['output_size'] < 2:
+            errors.append(
+                f"categoricalCrossentropy requires output_size >= 2, "
+                f"got {config['network']['output_size']}. "
+                "Try --output_size 2 for binary classification with softmax."
+            )
+    
+    elif config['training']['loss'] == 'categoricalCrossentropy':
+        if config['network']['activation_output'] != 'softmax':
+            errors.append(
+                "categoricalCrossentropy requires softmax output activation, "
+                f"got '{config['network']['activation_output']}'"
+            )
+    
+    if errors:
+        print("\n❌ Configuration validation errors:")
+        for err in errors:
+            print(f"  - {err}")
+        raise ValueError("Invalid configuration")
+    
+    print("✓ Configuration validated successfully")
     return config
 
 
@@ -88,22 +234,25 @@ def main():
     
     if args.config:
         config = parse_config_file(args.config)
+        config = validate_config(config, X.shape)
     else:
         config = {
             'network': {
-                'input_size': X.shape[1],
-                'layers': args.layers or [24, 24],
-                'output_size': 1,
-                'activation_hidden': 'relu',
-                'activation_output': 'sigmoid'
+                'input_size': args.input_size or X.shape[1],
+                'layer': args.layer or [24, 24],
+                'output_size': args.output_size or 1,
+                'activation_hidden': args.activation_hidden or 'relu',
+                'activation_output': args.activation_output or 'sigmoid',
+                'weights_init': args.weights_init or 'heUniform'
             },
             'training': {
-                'epochs': args.epochs,
-                'learning_rate': args.learning_rate,
-                'batch_size': args.batch_size,
-                'loss': args.loss
+                'epochs': args.epochs or 50,
+                'learning_rate': args.learning_rate or 0.01,
+                'batch_size': args.batch_size or 32,
+                'loss': args.loss or 'binaryCrossentropy'
             }
         }
+        config = validate_config(config, X.shape)
 
     mlp = MyMLP(config)
 
