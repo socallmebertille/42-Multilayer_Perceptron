@@ -262,7 +262,7 @@ def main():
     if args.loss == 'categoricalCrossentropy' or config['training']['loss'] == 'categoricalCrossentropy':
         Y = np.hstack((1 - Y, Y))  # Convertir en one-hot pour 2 classes
     
-    mlp = MyMLP(config)
+    mlp = MyMLP(config, norm_params)
 
     # Détection du mode
     if args.split:

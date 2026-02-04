@@ -1,11 +1,14 @@
 import numpy as np
+
+from src.preprocessing import apply_normalization
 from src.activations import sigmoid, sigmoid_derivative, softmax, softmax_derivative, relu, relu_derivative
 from src.losses import binary_crossentropy, binary_crossentropy_derivative, categorical_crossentropy, categorical_crossentropy_derivative
 
 class MyMLP:
 
-    def __init__(self, config):
+    def __init__(self, config, norm_params):
         self.config = config
+        self.norm_params = norm_params
         self.weights = []
         self.biases = []
 
@@ -208,33 +211,46 @@ class MyMLP:
 
     def predict(self, X, Y):
         nb_samples = X.shape[0]
-        # y_pred = self.network.forward(X)
-        # y_pred = np.argmax(y_pred, axis=1)
-        y_pred = 0
+        X = apply_normalization(X, self.norm_params)
+        y_pred = self.forward(X)
+        print(f'ypred : {y_pred[:5]}')
         for i in range(nb_samples):
             # Prediction logic here
-            print(f"-> ({int(Y[i][0])}, {int(y_pred[i])}) - raw[ {0} {0} ]")
+            if self.config['training']['loss'] == 'binaryCrossentropy' and self.config['network']['output_size'] == 1:
+                y_pred[i] = 1 if y_pred[i] >= 0.5 else 0
+                print(f"-> ({int(Y[i][0])}, {y_pred[i].astype(np.int16)}) - raw[ {y_pred[i]} {1 - y_pred[i]} ]")
+            else:
+                prob_class_0 = y_pred[i][0]
+                prob_class_1 = y_pred[i][1]
+                y_pred[i] = 0 if prob_class_0 >= prob_class_1 else 1
+                print(f"-> ({int(Y[i][0])}, {y_pred[i][0].astype(np.int16)}) - raw[ {prob_class_0:.4f} {prob_class_1:.4f} ]")
         
-        correct_predictions = sum(1 for i in range(nb_samples) if y_pred[i] == Y[i])
+        if self.config['training']['loss'] == 'categoricalCrossentropy':
+            correct_predictions = sum(1 for i in range(nb_samples) if y_pred[i][0] == Y[i])
+        else:
+            correct_predictions = sum(1 for i in range(nb_samples) if y_pred[i] == Y[i])
         print(f"> correctly predicted : ({correct_predictions}/{nb_samples})")
-        print(f"> loss (mean squarred error) : {0}")
-        print(f"> loss (binary crossentropy) : {0}")
+        print(f"> loss (mean squarred error) : {np.mean((y_pred - Y) ** 2):.4f}")
+        print(f"> loss (binary crossentropy) : {binary_crossentropy(Y, y_pred):.4f}")
 
     def save(self, path):
         try:
             model = {
                 'weights': self.weights,
-                'biases': self.biases
+                'biases': self.biases,
+                'config': self.config,
+                'norm_params': self.norm_params
             }
-            np.save(path, model)
+            np.save(path, model, allow_pickle=True)
             print(f"> saving model '{path}' to disk...")
         except Exception as e:
             print(f"Error while saving model to {path} : {e}")
             return
 
     def load(self, path):
-        model = np.load(path, 'r')
+        model = np.load(path, allow_pickle=True).item()
         self.weights = model['weights']
         self.biases = model['biases']
+        self.config = model['config']
+        self.norm_params = model.get('norm_params')
         print(f"> loading model '{path}' from disk...")
-        print(f"model : {model}")
