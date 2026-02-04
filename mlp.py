@@ -25,25 +25,28 @@ def parse_arguments():
     parser.add_argument('--config', type=str,
                        help='Path to config file (.txt)')
     parser.add_argument('--layer', nargs='+', type=int,
-                       help='Hidden layer sizes. Ex: --layer 24 24 24')
+                       help='Hidden layer sizes ∈ ℕ*. Ex: --layer 24 24 24')
     parser.add_argument('--epochs', type=int, default=100,
-                       help='Number of training epochs')
+                       help='Number of training epochs ∈ ℕ*')
     parser.add_argument('--learning_rate', type=float, default=0.01,
-                       help='Learning rate')
+                       help='Learning rate ∈ [0, 1]')
     parser.add_argument('--batch_size', type=int, default=32,
-                       help='Batch size')
+                       help='Batch size ∈ ℕ*')
     parser.add_argument('--loss', type=str, default='binaryCrossentropy',
                        choices=['binaryCrossentropy', 'categoricalCrossentropy'],
                        help='Loss function')
     parser.add_argument('--input_size', type=int,
-                       help='Input size (number of features)')
+                       help='Input size ∈ [1, +inf] (number of features)')
     parser.add_argument('--output_size', type=int,
-                       help='Output size (number of classes)')
+                       help='Output size ∈ [1, +inf] (number of classes)')
     parser.add_argument('--activation_hidden', type=str, default='relu',
+                        choices=['sigmoid', 'relu', 'tanh'],
                        help='Activation function for hidden layers')
     parser.add_argument('--activation_output', type=str, default='sigmoid',
+                        choices=['sigmoid', 'softmax', 'linear'],
                        help='Activation function for output layer')
     parser.add_argument('--weights_init', type=str, default='heUniform',
+                       choices=['heUniform', 'heNormal', 'xavierUniform', 'random'],
                        help='Weights initialization method')
     
     return parser.parse_args()
@@ -151,7 +154,7 @@ def parse_config_file(path):
                         config['training'][key] = batch
                         
                     elif key == 'loss':
-                        valid = ['binaryCrossentropy', 'categoricalCrossentropy', 'mse']
+                        valid = ['binaryCrossentropy', 'categoricalCrossentropy']
                         if value not in valid:
                             raise ValueError(f"loss must be one of {valid}, got '{value}'")
                         config['training'][key] = value
@@ -213,7 +216,6 @@ def validate_config(config, X_shape):
             print(f"  - {err}")
         raise ValueError("Invalid configuration")
     
-    print("✓ Configuration validated successfully")
     return config
 
 
@@ -226,8 +228,8 @@ def main():
     if Path(args.dataset).is_file() is True:
         data_file = args.dataset
         args.dataset = np.array(lire_csv(args.dataset))
-        X = args.dataset[:, 2:]
-        Y = binary_class(args.dataset[:, 1:2], 'B', 'M')
+        X = args.dataset[:, 2:].astype(np.float64)
+        Y = binary_class(args.dataset[:, 1:2], 'B', 'M').astype(np.float64)
     else:
         print(f"Error: the file {args.dataset} does not exist.")
         return
@@ -276,8 +278,8 @@ def main():
             print("Error: valid_set is None.")
             return
 
-        x_valid = valid_set[:, 2:]
-        y_valid = binary_class(valid_set[:, 1:2], 'B', 'M')
+        x_valid = valid_set[:, 2:].astype(np.float64)
+        y_valid = binary_class(valid_set[:, 1:2], 'B', 'M').astype(np.float64)
         print(f"x_train shape : {X.shape}")
         print(f"x_valid shape : {x_valid.shape}")
 

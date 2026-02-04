@@ -1,53 +1,181 @@
 import numpy as np
-from src.layers import DenseLayer
+from src.activations import relu, sigmoid, relu_derivative
+from src.losses import binary_crossentropy
 
 class MyMLP:
+
     def __init__(self, config):
         self.config = config
-        self.network = None
-        self.loss = config['training']['loss']
-        self.learning_rate = config['training']['learning_rate']
-        self.epochs = config['training']['epochs']
-        self.batch_size = config['training']['batch_size']
+        self.weights = []
+        self.biases = []
 
-        self.build_network()
+        # Construire l'architecture du réseau
+        self._build_network()
+    
+    def _build_network(self):
+        """Construit les couches avec initialisation des poids"""
+        # Architecture complète : [input] -> [hidden layers] -> [output]
+        layer_sizes = (
+            [self.config['network']['input_size']] +      # [30]
+            self.config['network']['layer'] +              # [24, 24, 24]
+            [self.config['network']['output_size']]        # [1]
+        )
+        # Résultat : [30, 24, 24, 24, 1]
+        
+        print(f"Network architecture: {layer_sizes}")
+        
+        # Initialiser poids et biais pour chaque connexion entre couches
+        for i in range(len(layer_sizes) - 1):
+            # Créer les poids entre couche i et couche i+1
+            W = self._initialize_weights(
+                layer_sizes[i],      # input de cette couche
+                layer_sizes[i + 1],  # output de cette couche
+                self.config['network']['weights_init']
+            )
+            b = np.zeros(layer_sizes[i + 1])  # Un biais par neurone de sortie
+            
+            self.weights.append(W)
+            self.biases.append(b)
+            
+            print(f"  Layer {i}: W shape = {W.shape}, b shape = {b.shape}")
 
-    def build_network(self):
-        net_cfg = self.config['network']
-        layers = []
+    def _initialize_weights(self, n_in, n_out, method):
+        """Initialise une matrice de poids"""
+        if method == 'heUniform':
+            limit = np.sqrt(6 / n_in)
+            return np.random.uniform(-limit, limit, (n_in, n_out))
+        elif method == 'heNormal':
+            return np.random.randn(n_in, n_out) * np.sqrt(2 / n_in)
+        elif method == 'xavierUniform':
+            limit = np.sqrt(6 / (n_in + n_out))
+            return np.random.uniform(-limit, limit, (n_in, n_out))
+        elif method == 'xavierNormal':
+            return np.random.randn(n_in, n_out) * np.sqrt(2 / (n_in + n_out))
+        else:
+            raise ValueError(f"Unknown initialization: {method}")
 
-        input_size = int(net_cfg['input_size'])
-        hidden_layers = net_cfg['layer']
-        output_size = int(net_cfg['output_size'])
+    def forward(self, X):
+        """
+        Fait passer les données dans le réseau (de gauche à droite)
+        
+        X: (batch_size, 30) → données d'entrée
+        Returns: (batch_size, 1) → prédictions
+        """
+        # On va stocker toutes les activations pour le backward
+        self.activations = [X]  # a^(0) = X
+        self.z_values = []      # Pour stocker les z de chaque couche
+        
+        a = X.astype(np.float64)  # Activation de la couche actuelle (au début = input)
+        
+        # Pour chaque couche (sauf la dernière)
+        for i in range(len(self.weights) - 1):
+            # 1. Calcul de z = a @ W + b
+            z = a @ self.weights[i] + self.biases[i]
+            self.z_values.append(z)
+            
+            # 2. Activation ReLU pour couches cachées
+            a = relu(z)
+            self.activations.append(a)
+        
+        # Dernière couche (output) avec sigmoid
+        z = a @ self.weights[-1] + self.biases[-1]
+        self.z_values.append(z)
+        
+        a = sigmoid(z)  # Probabilité entre 0 et 1
+        self.activations.append(a)
+        
+        return a  # Prédiction finale
+    
+    def backward(self, y_true):
+        """
+        Calcule comment ajuster les poids (de droite à gauche)
+        
+        Utilise la chain rule (règle de dérivation en chaîne)
+        """
+        m = y_true.shape[0]  # Nombre d'exemples dans le batch
+        
+        # Stockage des gradients
+        grads_w = []
+        grads_b = []
+        
+        # 1. Erreur de la couche de sortie
+        # Pour sigmoid + binary crossentropy, la formule se simplifie !
+        delta = self.activations[-1] - y_true  # ŷ - y (SUPER SIMPLE !)
+        
+        # 2. Remonter couche par couche (de la fin vers le début)
+        for i in range(len(self.weights) - 1, -1, -1):
+            # Gradient pour les poids : dW = a_precedente^T @ delta
+            dW = self.activations[i].T @ delta / m
+            
+            # Gradient pour les biais : db = moyenne de delta
+            db = np.mean(delta, axis=0)
+            
+            grads_w.insert(0, dW)  # Insérer au début (car on remonte)
+            grads_b.insert(0, db)
+            
+            # Si pas la première couche, propager l'erreur
+            if i > 0:
+                # Propager l'erreur à la couche précédente
+                delta = (delta @ self.weights[i].T) * relu_derivative(self.z_values[i-1])
+        
+        return grads_w, grads_b
+    
+    def update_weights(self, grads_w, grads_b):
+        """
+        Met à jour les poids avec la règle simple :
+        nouveau_poids = ancien_poids - learning_rate * gradient
+        """
+        lr = self.config['training']['learning_rate']
+        
+        for i in range(len(self.weights)):
+            self.weights[i] -= lr * grads_w[i]
+            self.biases[i] -= lr * grads_b[i]
 
-        prev_size = input_size
-        for size in hidden_layers:
-            layers.append(DenseLayer(
-                prev_size,
-                size,
-                activation=net_cfg['activation_hidden']
-            ))
-            prev_size = size
+    def train(self, X_train, y_train, X_valid, y_valid):
+        epochs = self.config['training']['epochs']
+        batch_size = self.config['training']['batch_size']
+        for epoch in range(epochs):
 
-        layers.append(DenseLayer(
-            prev_size,
-            output_size,
-            activation=net_cfg['activation_output']
-        ))
+            # 1. Mélanger les données
+            indices = np.random.permutation(len(X_train))
+            X_shuffled = X_train[indices]
+            y_shuffled = y_train[indices]
+            
+            # 2. Découper en mini-batches
+            num_batches = len(X_train) // batch_size
+            
+            for i in range(num_batches):
+                # Extraire un batch
+                start = i * batch_size
+                end = start + batch_size
+                X_batch = X_shuffled[start:end]
+                y_batch = y_shuffled[start:end]
+                
+                # 3. Forward pass
+                y_pred = self.forward(X_batch)
+                
+                # 4. Backward pass
+                grads_w, grads_b = self.backward(y_batch)
+                
+                # 5. Update des poids
+                self.update_weights(grads_w, grads_b)
+            
+            # 6. Calculer les loss pour affichage
+            train_pred = self.forward(X_train)
+            train_loss = binary_crossentropy(y_train, train_pred)
+            
+            valid_pred = self.forward(X_valid)
+            valid_loss = binary_crossentropy(y_valid, valid_pred)
+            
+            # 7. Afficher
+            print(f"epoch {epoch+1:02d}/{epochs} - loss: {train_loss:.4f} - val_loss: {valid_loss:.4f}")
 
-
-    def train(self, X_train, y_train, X_val, y_val):
-        for epoch in range(self.epochs):
-            y_pred = self.forward(X_train)
-            loss = compute_loss(y_train, y_pred, self.loss)
-            self.backward(y_train, y_pred, self.learning_rate)
-
-            val_loss = self.network.evaluate(X_val, y_val, self.loss)
-            print(f"epoch {epoch}/{self.epochs} - loss: {loss:.4f} - val_loss: {val_loss:.4f}")
 
     def predict(self, X, Y):
         nb_samples = X.shape[0]
-        y_pred = np.zeros(nb_samples)  # Dummy predictions
+        # y_pred = self.network.forward(X)
+        # y_pred = np.argmax(y_pred, axis=1)
+        y_pred = 0
         for i in range(nb_samples):
             # Prediction logic here
             print(f"-> ({int(Y[i][0])}, {int(y_pred[i])}) - raw[ {0} {0} ]")
@@ -58,8 +186,16 @@ class MyMLP:
         print(f"> loss (binary crossentropy) : {0}")
 
     def save(self, path):
-        self.network.save(path)
-        print(f"> saving model '{path}' to disk...")
+        try:
+            model = {
+                'weights': self.weights,
+                'biases': self.biases
+            }
+            np.save(path, model)
+            print(f"> saving model '{path}' to disk...")
+        except Exception as e:
+            print(f"Error while saving model to {path} : {e}")
+            return
 
     def load(self, path):
         self.network.load(path)
