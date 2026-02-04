@@ -11,6 +11,20 @@ def sigmoid_derivative(a):
     """Dérivée de sigmoid (pour backprop)"""
     return a * (1 - a)
 
+def softmax(z):
+    """
+    Softmax pour la sortie (classification multi-classes)
+    Transforme un vecteur de nombres en probabilités qui somment à 1
+    """
+    exp_z = np.exp(z - np.max(z, axis=1, keepdims=True))  # soustraction pour stabilité numérique
+    return exp_z / np.sum(exp_z, axis=1, keepdims=True)
+
+def softmax_derivative(a):
+    """Dérivée de softmax (pour backprop)"""
+    # Note : en pratique, on utilise souvent une simplification avec la cross-entropy
+    s = a.reshape(-1,1)
+    return np.diagflat(s) - np.dot(s, s.T)
+
 def relu(z):
     """
     ReLU pour les couches cachées

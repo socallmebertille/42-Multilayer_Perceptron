@@ -2,8 +2,9 @@ import argparse
 from pathlib import Path
 import numpy as np
 
-from src.utils import lire_csv, binary_class
+from src.utils import lire_csv
 from src.split_data import splitting_phase
+from src.preprocessing import normalize, apply_normalization
 from src.my_mlp import MyMLP
 
 def parse_arguments():
@@ -229,7 +230,9 @@ def main():
         data_file = args.dataset
         args.dataset = np.array(lire_csv(args.dataset))
         X = args.dataset[:, 2:].astype(np.float64)
-        Y = binary_class(args.dataset[:, 1:2], 'B', 'M').astype(np.float64)
+        Y = np.where(args.dataset[:, 1:2] == 'B', 0.0, 1.0).astype(np.float64)
+        X, norm_params = normalize(X)
+        print(f"✓ X normalized: mean={X.mean():.4f}, std={X.std():.4f}")
     else:
         print(f"Error: the file {args.dataset} does not exist.")
         return
@@ -256,6 +259,9 @@ def main():
         }
         config = validate_config(config, X.shape)
 
+    if args.loss == 'categoricalCrossentropy' or config['training']['loss'] == 'categoricalCrossentropy':
+        Y = np.hstack((1 - Y, Y))  # Convertir en one-hot pour 2 classes
+    
     mlp = MyMLP(config)
 
     # Détection du mode
@@ -279,7 +285,10 @@ def main():
             return
 
         x_valid = valid_set[:, 2:].astype(np.float64)
-        y_valid = binary_class(valid_set[:, 1:2], 'B', 'M').astype(np.float64)
+        x_valid = apply_normalization(x_valid, norm_params)
+        y_valid = np.where(valid_set[:, 1:2] == 'B', 0.0, 1.0).astype(np.float64)
+        if args.loss == 'categoricalCrossentropy' or config['training']['loss'] == 'categoricalCrossentropy':
+            y_valid = np.hstack((1 - y_valid, y_valid))  # Convertir en one-hot pour 2 classes
         print(f"x_train shape : {X.shape}")
         print(f"x_valid shape : {x_valid.shape}")
 

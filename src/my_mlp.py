@@ -1,6 +1,6 @@
 import numpy as np
-from src.activations import relu, sigmoid, relu_derivative
-from src.losses import binary_crossentropy
+from src.activations import sigmoid, sigmoid_derivative, softmax, softmax_derivative, relu, relu_derivative
+from src.losses import binary_crossentropy, binary_crossentropy_derivative, categorical_crossentropy, categorical_crossentropy_derivative
 
 class MyMLP:
 
@@ -77,11 +77,14 @@ class MyMLP:
             a = relu(z)
             self.activations.append(a)
         
-        # Dernière couche (output) avec sigmoid
+        # Dernière couche (output) avec sigmoid ou softmax
         z = a @ self.weights[-1] + self.biases[-1]
         self.z_values.append(z)
         
-        a = sigmoid(z)  # Probabilité entre 0 et 1
+        if self.config['training']['loss'] == 'binaryCrossentropy'and self.config['network']['output_size'] == 1:
+            a = sigmoid(z)  # Probabilité entre 0 et 1
+        else:
+            a = softmax(z)  # Probabilités pour multi-classes
         self.activations.append(a)
         
         return a  # Prédiction finale
@@ -134,6 +137,14 @@ class MyMLP:
     def train(self, X_train, y_train, X_valid, y_valid):
         epochs = self.config['training']['epochs']
         batch_size = self.config['training']['batch_size']
+
+        # Pour l'early stopping
+        best_val_loss = float('inf')
+        patience = 10  # Nombre d'epochs sans amélioration avant d'arrêter
+        patience_counter = 0
+        best_weights = None
+        best_biases = None
+    
         for epoch in range(epochs):
 
             # 1. Mélanger les données
@@ -161,14 +172,38 @@ class MyMLP:
                 self.update_weights(grads_w, grads_b)
             
             # 6. Calculer les loss pour affichage
-            train_pred = self.forward(X_train)
-            train_loss = binary_crossentropy(y_train, train_pred)
-            
+            train_pred = self.forward(X_train)          
             valid_pred = self.forward(X_valid)
-            valid_loss = binary_crossentropy(y_valid, valid_pred)
+
+            # Choisir la bonne loss
+            loss_fn = (categorical_crossentropy 
+                    if self.config['training']['loss'] == 'categoricalCrossentropy'
+                    else binary_crossentropy)
+            
+            # Dans la boucle
+            train_loss = loss_fn(y_train, train_pred)
+            valid_loss = loss_fn(y_valid, valid_pred)
             
             # 7. Afficher
             print(f"epoch {epoch+1:02d}/{epochs} - loss: {train_loss:.4f} - val_loss: {valid_loss:.4f}")
+
+            # Early stopping
+            if valid_loss < best_val_loss:
+                best_val_loss = valid_loss
+                patience_counter = 0
+                # Sauvegarder les meilleurs poids
+                best_weights = [w.copy() for w in self.weights]
+                best_biases = [b.copy() for b in self.biases]
+                print(f"  → New best validation loss: {best_val_loss:.4f}")
+            else:
+                patience_counter += 1
+                if patience_counter >= patience:
+                    print(f"\n✓ Early stopping at epoch {epoch+1}")
+                    print(f"  Best validation loss was {best_val_loss:.4f} at epoch {epoch+1-patience}")
+                    # Restaurer les meilleurs poids
+                    self.weights = best_weights
+                    self.biases = best_biases
+                    break
 
 
     def predict(self, X, Y):
@@ -198,4 +233,8 @@ class MyMLP:
             return
 
     def load(self, path):
-        self.network.load(path)
+        model = np.load(path, 'r')
+        self.weights = model['weights']
+        self.biases = model['biases']
+        print(f"> loading model '{path}' from disk...")
+        print(f"model : {model}")
