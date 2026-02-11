@@ -100,38 +100,38 @@ def parse_config_file(path):
                 if section == 'network':
                     if key == 'layer':
                         layer = [int(x.strip()) for x in value.split(',')]
-                        if not layer or any(l <= 0 for l in layer):
-                            raise ValueError(f"layers must be positive integers, got {value}")
+                        # if not layer or any(l <= 0 for l in layer):
+                        #     raise ValueError(f"layers must be positive integers, got {value}")
                         config['network'][key] = layer
                         
                     elif key == 'input_size':
                         size = int(value)
-                        if size <= 0:
-                            raise ValueError(f"input_size must be > 0, got {size}")
+                        # if size <= 0:
+                        #     raise ValueError(f"input_size must be > 0, got {size}")
                         config['network'][key] = size
                         
                     elif key == 'output_size':
                         size = int(value)
-                        if size <= 0:
-                            raise ValueError(f"output_size must be > 0, got {size}")
+                        # if size <= 0:
+                        #     raise ValueError(f"output_size must be > 0, got {size}")
                         config['network'][key] = size
                         
                     elif key == 'activation_hidden':
-                        valid = ['sigmoid', 'relu', 'tanh']
-                        if value not in valid:
-                            raise ValueError(f"activation_hidden must be one of {valid}, got '{value}'")
+                        # valid = ['sigmoid', 'relu', 'tanh']
+                        # if value not in valid:
+                        #     raise ValueError(f"activation_hidden must be one of {valid}, got '{value}'")
                         config['network'][key] = value
                         
                     elif key == 'activation_output':
-                        valid = ['sigmoid', 'softmax', 'linear']
-                        if value not in valid:
-                            raise ValueError(f"activation_output must be one of {valid}, got '{value}'")
+                        # valid = ['sigmoid', 'softmax', 'linear']
+                        # if value not in valid:
+                        #     raise ValueError(f"activation_output must be one of {valid}, got '{value}'")
                         config['network'][key] = value
                         
                     elif key == 'weights_init':
-                        valid = ['heUniform', 'heNormal', 'xavierUniform', 'random']
-                        if value not in valid:
-                            raise ValueError(f"weights_init must be one of {valid}, got '{value}'")
+                        # valid = ['heUniform', 'heNormal', 'xavierUniform', 'random']
+                        # if value not in valid:
+                        #     raise ValueError(f"weights_init must be one of {valid}, got '{value}'")
                         config['network'][key] = value
                     else:
                         print(f"Warning: Unknown network parameter '{key}' ignored")
@@ -139,26 +139,26 @@ def parse_config_file(path):
                 elif section == 'training':
                     if key == 'epochs':
                         epochs = int(value)
-                        if epochs <= 0:
-                            raise ValueError(f"epochs must be > 0, got {epochs}")
+                        # if epochs <= 0:
+                        #     raise ValueError(f"epochs must be > 0, got {epochs}")
                         config['training'][key] = epochs
                         
                     elif key == 'learning_rate':
                         lr = float(value)
-                        if lr <= 0 or lr > 1:
-                            raise ValueError(f"learning_rate must be in (0, 1], got {lr}")
+                        # if lr <= 0 or lr > 1:
+                        #     raise ValueError(f"learning_rate must be in (0, 1], got {lr}")
                         config['training'][key] = lr
                         
                     elif key == 'batch_size':
                         batch = int(value)
-                        if batch <= 0:
-                            raise ValueError(f"batch_size must be > 0, got {batch}")
+                        # if batch <= 0:
+                        #     raise ValueError(f"batch_size must be > 0, got {batch}")
                         config['training'][key] = batch
                         
                     elif key == 'loss':
-                        valid = ['binaryCrossentropy', 'categoricalCrossentropy']
-                        if value not in valid:
-                            raise ValueError(f"loss must be one of {valid}, got '{value}'")
+                        # valid = ['binaryCrossentropy', 'categoricalCrossentropy']
+                        # if value not in valid:
+                        #     raise ValueError(f"loss must be one of {valid}, got '{value}'")
                         config['training'][key] = value
                     else:
                         print(f"Warning: Unknown training parameter '{key}' ignored")
@@ -183,34 +183,60 @@ def validate_config(config, X_shape):
     errors = []
     
     # Validation réseau
-    if config['network']['input_size'] is None:
-        config['network']['input_size'] = X_shape[1]
-    elif config['network']['input_size'] != X_shape[1]:
-        errors.append(
-            f"input_size ({config['network']['input_size']}) "
-            f"!= dataset features ({X_shape[1]})"
-        )
+    net = config['network']
+    if net['layer'] is None or any(l <= 0 for l in net['layer']):
+        errors.append(f"layers must be positive integers, got {net['layer']}")
+
+    if net['input_size'] is None:
+        net['input_size'] = X_shape[1]
+    elif net['input_size'] != X_shape[1]:
+        errors.append(f"input_size ({net['input_size']}) != dataset features ({X_shape[1]})")
+    elif net['input_size'] <= 0:
+        errors.append(f"input_size must be > 0, got {net['input_size']}")
+
+    if net['output_size'] <= 0:
+        errors.append(f"output_size must be > 0, got {net['output_size']}")
+
+    valid = ['sigmoid', 'relu', 'tanh']
+    if net['activation_hidden'] not in valid:
+        errors.append(f"activation_hidden must be one of {valid}, got '{net['activation_hidden']}'")
+
+    valid = ['sigmoid', 'softmax', 'linear']
+    if net['activation_output'] not in valid:
+        errors.append(f"activation_output must be one of {valid}, got '{net['activation_output']}'")
+
+    valid = ['heUniform', 'heNormal', 'xavierUniform', 'random']
+    if net['weights_init'] not in valid:
+        errors.append(f"weights_init must be one of {valid}, got '{net['weights_init']}'")
+
+    # Validation training
+    train = config['training']
+    if train['epochs'] <= 0:
+        errors.append(f"epochs must be > 0, got {train['epochs']}")
+
+    if train['learning_rate'] <= 0 or train['learning_rate'] > 1:
+        errors.append(f"learning_rate must be in (0, 1], got {train['learning_rate']}")
+
+    if train['batch_size'] <= 0:
+        errors.append(f"batch_size must be > 0, got {train['batch_size']}")
+    
+    valid = ['binaryCrossentropy', 'categoricalCrossentropy']
+    if train['loss'] not in valid:
+        errors.append(f"loss must be one of {valid}, got '{train['loss']}'")
     
     # Validation cohérence loss / activation output
-    if config['training']['loss'] == 'categoricalCrossentropy':
-        if config['network']['activation_output'] != 'softmax':
-            errors.append(
-                "categoricalCrossentropy requires softmax output activation, "
-                f"got '{config['network']['activation_output']}'"
-            )
-        if config['network']['output_size'] < 2:
-            errors.append(
-                f"categoricalCrossentropy requires output_size >= 2, "
-                f"got {config['network']['output_size']}. "
-                "Try --output_size 2 for binary classification with softmax."
-            )
+    if train['loss'] == 'categoricalCrossentropy':
+        if net['activation_output'] != 'softmax':
+            errors.append("categoricalCrossentropy requires softmax output activation, "
+                f"got '{net['activation_output']}'")
+        if net['output_size'] < 2:
+            errors.append(f"categoricalCrossentropy requires output_size >= 2, got {net['output_size']}. "
+                "Try --output_size 2 for binary classification with softmax.")
     
-    elif config['training']['loss'] == 'categoricalCrossentropy':
-        if config['network']['activation_output'] != 'softmax':
-            errors.append(
-                "categoricalCrossentropy requires softmax output activation, "
-                f"got '{config['network']['activation_output']}'"
-            )
+    elif train['loss'] == 'categoricalCrossentropy':
+        if net['activation_output'] != 'softmax':
+            errors.append("categoricalCrossentropy requires softmax output activation, "
+                f"got '{net['activation_output']}'")
     
     if errors:
         print("\n❌ Configuration validation errors:")
