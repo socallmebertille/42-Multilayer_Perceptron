@@ -170,9 +170,13 @@ multilayer-perceptron/
 ```bash
 usage: mlp.py [-h] --dataset DATASET [--split SPLIT]
               [--predict PREDICT] [--config CONFIG]
-              [--layers LAYERS [LAYERS ...]] [--epochs EPOCHS]
-              [--learning-rate LEARNING_RATE] [--batch-size BATCH_SIZE]
-              [--loss {binary_crossentropy,categorical_crossentropy}]
+              [--layer LAYER [LAYER ...]] [--epochs EPOCHS]
+              [--learning_rate LEARNING_RATE] [--batch_size BATCH_SIZE]
+              [--loss {binaryCrossentropy,categoricalCrossentropy}]
+              [--input_size INPUT_SIZE] [--output_size OUTPUT_SIZE]
+              [--activation_hidden {sigmoid,relu,tanh}]
+              [--activation_output {sigmoid,softmax,linear}]
+              [--weights_init {heUniform,heNormal,xavierUniform,random}]
 
 Multilayer Perceptron for binary classification
 
@@ -182,13 +186,23 @@ options:
   --split SPLIT         Split ratio (format: train,valid). Ex: 0.7,0.15
   --predict PREDICT     Path to saved model for prediction
   --config CONFIG       Path to config file (.txt)
-  --layers LAYERS [LAYERS ...]
-                        Hidden layer sizes. Ex: --layers 24 24 24
-  --epochs EPOCHS       Number of training epochs
-  --learning-rate LEARNING_RATE
-                        Learning rate
-  --batch-size BATCH_SIZE
-                        Batch size
-  --loss {binary_crossentropy,categorical_crossentropy}
+  --layer LAYER [LAYER ...]
+                        Hidden layer sizes ∈ ℕ*. Ex: --layer 24 24 24
+  --epochs EPOCHS       Number of training epochs ∈ ℕ*
+  --learning_rate LEARNING_RATE
+                        Learning rate ∈ [0, 1]
+  --batch_size BATCH_SIZE
+                        Batch size ∈ ℕ*
+  --loss {binaryCrossentropy,categoricalCrossentropy}
                         Loss function
+  --input_size INPUT_SIZE
+                        Input size ∈ [1, +inf] (number of features)
+  --output_size OUTPUT_SIZE
+                        Output size ∈ [1, +inf] (number of classes)
+  --activation_hidden {sigmoid,relu,tanh}
+                        Activation function for hidden layers
+  --activation_output {sigmoid,softmax,linear}
+                        Activation function for output layer
+  --weights_init {heUniform,heNormal,xavierUniform,random}
+                        Weights initialization method
 ```

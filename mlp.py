@@ -1,3 +1,4 @@
+import sys
 import argparse
 from pathlib import Path
 import numpy as np
@@ -226,8 +227,16 @@ def main():
     """
 
     args = parse_arguments()
-    if Path(args.dataset).is_file() is True:
+    if Path(args.dataset).is_file():
         data_file = args.dataset
+        if data_file != "datasets/test_set.csv" and args.predict:
+            print("Please, split your dataset with the correct flags before predict the set if you have not.")
+            print("Or, give the correct set of test.")
+            return 1
+        if data_file != "datasets/train_set.csv" and not args.split and not args.predict:
+            print("Please, split your dataset with the correct flags before training the set if you have not.")
+            print("Or, give the correct set of training.")
+            return 1
         args.dataset = np.array(lire_csv(args.dataset))
         X = args.dataset[:, 2:].astype(np.float64)
         Y = np.where(args.dataset[:, 1:2] == 'B', 0.0, 1.0).astype(np.float64)
@@ -235,11 +244,10 @@ def main():
         print(f"✓ X normalized: mean={X.mean():.4f}, std={X.std():.4f}")
     else:
         print(f"Error: the file {args.dataset} does not exist.")
-        return
+        return 1
     
     if args.config:
         config = parse_config_file(args.config)
-        config = validate_config(config, X.shape)
     else:
         config = {
             'network': {
@@ -257,7 +265,9 @@ def main():
                 'loss': args.loss or 'binaryCrossentropy'
             }
         }
-        config = validate_config(config, X.shape)
+
+    config = validate_config(config, X.shape)
+    print(args.epochs)
 
     if args.loss == 'categoricalCrossentropy' or config['training']['loss'] == 'categoricalCrossentropy':
         Y = np.hstack((1 - Y, Y))  # Convertir en one-hot pour 2 classes
@@ -282,7 +292,7 @@ def main():
         valid_set = np.array(lire_csv("datasets/valid_set.csv"))
         if valid_set is None:
             print("Error: valid_set is None.")
-            return
+            return 1
 
         x_valid = valid_set[:, 2:].astype(np.float64)
         x_valid = apply_normalization(x_valid, norm_params)
@@ -298,4 +308,4 @@ def main():
     return 0
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())
