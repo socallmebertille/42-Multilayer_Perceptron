@@ -8,7 +8,7 @@ EXEC="python mlp.py"
 
 run_test() {
     NAME=$1
-    EXPECT_FAIL=$2  # "true" si l'échec est attendu
+    EXPECT_FAIL=$2
     shift 2
     OUTPUT=$($@ 2>&1)
     EXIT=$?
@@ -29,15 +29,11 @@ run_test() {
 }
 
 echo "===================================================="
-echo "             CLI Parsing Tests"
+echo "                MLP Training Tests"
 echo "===================================================="
 
-# Échecs attendus
-run_test "epochs < 0" true $EXEC --dataset datasets/train_set.csv --epochs -1
-run_test "batch_size < 0" true $EXEC --dataset datasets/train_set.csv --batch_size -5
-run_test "missing dataset" true $EXEC --layer 24 24 24 --epochs 84
-
 # Succès attendus
-run_test "without any config given" false $EXEC --dataset datasets/train_set.csv
-run_test "config minimale valide" false $EXEC --dataset datasets/train_set.csv --layer 24 24 24 --epochs 84
-run_test "loss categoricalCrossentropy valide" false $EXEC --dataset datasets/train_set.csv --layer 24 24 24 --epochs 84 --loss categoricalCrossentropy --output_size 2 --activation_output softmax
+run_test "train minimal" false $EXEC --dataset datasets/train_set.csv --layer 2 2 --epochs 1 --batch_size 2
+
+# Succès attendus avec softmax
+run_test "train categorical" false $EXEC --dataset datasets/train_set.csv --layer 2 2 --epochs 1 --batch_size 2 --loss categoricalCrossentropy --output_size 2 --activation_output softmax

@@ -1,4 +1,4 @@
-import csv
+import csv, sys
 
 def lire_csv(fichier):
     """
@@ -12,10 +12,16 @@ def lire_csv(fichier):
             for ligne in lecteur:
                 ligne = [float(valeur) if valeur.replace('.', '', 1).isdigit() else valeur for valeur in ligne]
                 tableau.append(ligne)
-        return tableau
     except FileNotFoundError:
-        print(f"Error: the file {fichier} does not exist.")
-        return []
+        print(f"Error: the file '{fichier}' does not exist.", file=sys.stderr)
+        sys.exit(1)
+    except PermissionError:
+        print(f"Error: permission denied for file '{fichier}'.", file=sys.stderr)
+        sys.exit(1)
+    except Exception as e:
+        print(f"Error while reading '{fichier}': {e}", file=sys.stderr)
+        sys.exit(1)
+    return tableau
 
 def ecrire_csv(fichier, data):
     """

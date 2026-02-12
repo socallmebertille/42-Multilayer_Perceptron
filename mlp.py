@@ -1,251 +1,20 @@
 import sys
-import argparse
 from pathlib import Path
 import numpy as np
 
+from src.parsing import parse_arguments
+from src.config import merge_config, validate_config
 from src.utils import lire_csv
 from src.split_data import splitting_phase
 from src.preprocessing import normalize, apply_normalization
 from src.my_mlp import MyMLP
 
-def parse_arguments():
-    parser = argparse.ArgumentParser(
-        description='Multilayer Perceptron for binary classification'
-    )
-    
-    # Argument obligatoire
-    parser.add_argument('--dataset', type=str, required=True,
-                       help='Path to dataset CSV file')
-    
-    # Mode selection
-    parser.add_argument('--split', type=str,
-                       help='Split ratio (format: train,valid). Ex: 0.7,0.15')
-    parser.add_argument('--predict', type=str,
-                       help='Path to saved model for prediction')
-    
-    # Training parameters
-    parser.add_argument('--config', type=str,
-                       help='Path to config file (.txt)')
-    parser.add_argument('--layer', nargs='+', type=int,
-                       help='Hidden layer sizes ∈ ℕ*. Ex: --layer 24 24 24')
-    parser.add_argument('--epochs', type=int, default=100,
-                       help='Number of training epochs ∈ ℕ*')
-    parser.add_argument('--learning_rate', type=float, default=0.01,
-                       help='Learning rate ∈ [0, 1]')
-    parser.add_argument('--batch_size', type=int, default=32,
-                       help='Batch size ∈ ℕ*')
-    parser.add_argument('--loss', type=str, default='binaryCrossentropy',
-                       choices=['binaryCrossentropy', 'categoricalCrossentropy'],
-                       help='Loss function')
-    parser.add_argument('--input_size', type=int,
-                       help='Input size ∈ [1, +inf] (number of features)')
-    parser.add_argument('--output_size', type=int,
-                       help='Output size ∈ [1, +inf] (number of classes)')
-    parser.add_argument('--activation_hidden', type=str, default='relu',
-                        choices=['sigmoid', 'relu', 'tanh'],
-                       help='Activation function for hidden layers')
-    parser.add_argument('--activation_output', type=str, default='sigmoid',
-                        choices=['sigmoid', 'softmax', 'linear'],
-                       help='Activation function for output layer')
-    parser.add_argument('--weights_init', type=str, default='heUniform',
-                       choices=['heUniform', 'heNormal', 'xavierUniform', 'random'],
-                       help='Weights initialization method')
-    
-    return parser.parse_args()
 
-
-def parse_config_file(path):
-    if not Path(path).exists():
-        raise FileNotFoundError(f"Config file not found: {path}")
-    
-    # Valeurs par défaut
-    default_config = {
-        'network': {
-            'input_size': None,  # Sera inféré du dataset
-            'layer': [24, 24],
-            'output_size': 1,
-            'activation_hidden': 'relu',
-            'activation_output': 'sigmoid',
-            'weights_init': 'heUniform'
-        },
-        'training': {
-            'epochs': 100,
-            'learning_rate': 0.01,
-            'batch_size': 32,
-            'loss': 'binaryCrossentropy'
-        }
-    }
-    
-    config = {'network': {}, 'training': {}}
-    section = None
-
-    try:
-        with open(path) as f:
-            for line_num, line in enumerate(f, 1):
-                line = line.strip()
-                if not line or line.startswith('#'):
-                    continue
-
-                if line.startswith('['):
-                    section = line[1:-1]
-                    if section not in ['network', 'training']:
-                        raise ValueError(f"Unknown section [{section}]")
-                    continue
-
-                if '=' not in line:
-                    raise ValueError(f"Invalid syntax (expected 'key = value')")
-
-                key, value = map(str.strip, line.split('=', 1))
-
-                if section == 'network':
-                    if key == 'layer':
-                        layer = [int(x.strip()) for x in value.split(',')]
-                        # if not layer or any(l <= 0 for l in layer):
-                        #     raise ValueError(f"layers must be positive integers, got {value}")
-                        config['network'][key] = layer
-                        
-                    elif key == 'input_size':
-                        size = int(value)
-                        # if size <= 0:
-                        #     raise ValueError(f"input_size must be > 0, got {size}")
-                        config['network'][key] = size
-                        
-                    elif key == 'output_size':
-                        size = int(value)
-                        # if size <= 0:
-                        #     raise ValueError(f"output_size must be > 0, got {size}")
-                        config['network'][key] = size
-                        
-                    elif key == 'activation_hidden':
-                        # valid = ['sigmoid', 'relu', 'tanh']
-                        # if value not in valid:
-                        #     raise ValueError(f"activation_hidden must be one of {valid}, got '{value}'")
-                        config['network'][key] = value
-                        
-                    elif key == 'activation_output':
-                        # valid = ['sigmoid', 'softmax', 'linear']
-                        # if value not in valid:
-                        #     raise ValueError(f"activation_output must be one of {valid}, got '{value}'")
-                        config['network'][key] = value
-                        
-                    elif key == 'weights_init':
-                        # valid = ['heUniform', 'heNormal', 'xavierUniform', 'random']
-                        # if value not in valid:
-                        #     raise ValueError(f"weights_init must be one of {valid}, got '{value}'")
-                        config['network'][key] = value
-                    else:
-                        print(f"Warning: Unknown network parameter '{key}' ignored")
-
-                elif section == 'training':
-                    if key == 'epochs':
-                        epochs = int(value)
-                        # if epochs <= 0:
-                        #     raise ValueError(f"epochs must be > 0, got {epochs}")
-                        config['training'][key] = epochs
-                        
-                    elif key == 'learning_rate':
-                        lr = float(value)
-                        # if lr <= 0 or lr > 1:
-                        #     raise ValueError(f"learning_rate must be in (0, 1], got {lr}")
-                        config['training'][key] = lr
-                        
-                    elif key == 'batch_size':
-                        batch = int(value)
-                        # if batch <= 0:
-                        #     raise ValueError(f"batch_size must be > 0, got {batch}")
-                        config['training'][key] = batch
-                        
-                    elif key == 'loss':
-                        # valid = ['binaryCrossentropy', 'categoricalCrossentropy']
-                        # if value not in valid:
-                        #     raise ValueError(f"loss must be one of {valid}, got '{value}'")
-                        config['training'][key] = value
-                    else:
-                        print(f"Warning: Unknown training parameter '{key}' ignored")
-
-    except ValueError as e:
-        raise ValueError(f"Error parsing config file at line {line_num}: {e}")
-    except Exception as e:
-        raise ValueError(f"Unexpected error at line {line_num}: {e}")
-    
-    # Fusionner avec les valeurs par défaut (pour les clés manquantes)
-    for section in ['network', 'training']:
-        for key, default_value in default_config[section].items():
-            if key not in config[section]:
-                config[section][key] = default_value
-                print(f"Info: Using default {section}.{key} = {default_value}")
-    
-    print(f"> configuration loaded from '{path}'")
-    return config
-
-def validate_config(config, X_shape):
-    """Valide la cohérence globale de la config avec les données"""
-    errors = []
-    
-    # Validation réseau
-    net = config['network']
-    if net['layer'] is None or any(l <= 0 for l in net['layer']):
-        errors.append(f"layers must be positive integers, got {net['layer']}")
-
-    if net['input_size'] is None:
-        net['input_size'] = X_shape[1]
-    elif net['input_size'] != X_shape[1]:
-        errors.append(f"input_size ({net['input_size']}) != dataset features ({X_shape[1]})")
-    elif net['input_size'] <= 0:
-        errors.append(f"input_size must be > 0, got {net['input_size']}")
-
-    if net['output_size'] <= 0:
-        errors.append(f"output_size must be > 0, got {net['output_size']}")
-
-    valid = ['sigmoid', 'relu', 'tanh']
-    if net['activation_hidden'] not in valid:
-        errors.append(f"activation_hidden must be one of {valid}, got '{net['activation_hidden']}'")
-
-    valid = ['sigmoid', 'softmax', 'linear']
-    if net['activation_output'] not in valid:
-        errors.append(f"activation_output must be one of {valid}, got '{net['activation_output']}'")
-
-    valid = ['heUniform', 'heNormal', 'xavierUniform', 'random']
-    if net['weights_init'] not in valid:
-        errors.append(f"weights_init must be one of {valid}, got '{net['weights_init']}'")
-
-    # Validation training
-    train = config['training']
-    if train['epochs'] <= 0:
-        errors.append(f"epochs must be > 0, got {train['epochs']}")
-
-    if train['learning_rate'] <= 0 or train['learning_rate'] > 1:
-        errors.append(f"learning_rate must be in (0, 1], got {train['learning_rate']}")
-
-    if train['batch_size'] <= 0:
-        errors.append(f"batch_size must be > 0, got {train['batch_size']}")
-    
-    valid = ['binaryCrossentropy', 'categoricalCrossentropy']
-    if train['loss'] not in valid:
-        errors.append(f"loss must be one of {valid}, got '{train['loss']}'")
-    
-    # Validation cohérence loss / activation output
-    if train['loss'] == 'categoricalCrossentropy':
-        if net['activation_output'] != 'softmax':
-            errors.append("categoricalCrossentropy requires softmax output activation, "
-                f"got '{net['activation_output']}'")
-        if net['output_size'] < 2:
-            errors.append(f"categoricalCrossentropy requires output_size >= 2, got {net['output_size']}. "
-                "Try --output_size 2 for binary classification with softmax.")
-    
-    elif train['loss'] == 'categoricalCrossentropy':
-        if net['activation_output'] != 'softmax':
-            errors.append("categoricalCrossentropy requires softmax output activation, "
-                f"got '{net['activation_output']}'")
-    
-    if errors:
-        print("\n❌ Configuration validation errors:")
-        for err in errors:
-            print(f"  - {err}")
-        raise ValueError("Invalid configuration")
-    
-    return config
-
+def load_dataset(path):
+    data = np.array(lire_csv(path))
+    X = data[:, 2:].astype(np.float64)
+    Y = np.where(data[:, 1:2] == 'B', 0.0, 1.0).astype(np.float64)
+    return X, Y, data
 
 def main():
     """
@@ -253,51 +22,28 @@ def main():
     """
 
     args = parse_arguments()
-    if Path(args.dataset).is_file():
-        data_file = args.dataset
-        if data_file != "datasets/test_set.csv" and args.predict:
-            print("Please, split your dataset with the correct flags before predict the set if you have not.")
-            print("Or, give the correct set of test.")
-            return 1
-        if data_file != "datasets/train_set.csv" and not args.split and not args.predict:
-            print("Please, split your dataset with the correct flags before training the set if you have not.")
-            print("Or, give the correct set of training.")
-            return 1
-        args.dataset = np.array(lire_csv(args.dataset))
-        X = args.dataset[:, 2:].astype(np.float64)
-        Y = np.where(args.dataset[:, 1:2] == 'B', 0.0, 1.0).astype(np.float64)
-        X, norm_params = normalize(X)
-        print(f"✓ X normalized: mean={X.mean():.4f}, std={X.std():.4f}")
-    else:
-        print(f"Error: the file {args.dataset} does not exist.")
+    data_file = args.dataset
+    if not Path(data_file).exists():
+        print(f"Error: the file {data_file} does not exist.")
         return 1
     
-    if args.config:
-        config = parse_config_file(args.config)
-    else:
-        config = {
-            'network': {
-                'input_size': args.input_size or X.shape[1],
-                'layer': args.layer or [24, 24],
-                'output_size': args.output_size or 1,
-                'activation_hidden': args.activation_hidden or 'relu',
-                'activation_output': args.activation_output or 'sigmoid',
-                'weights_init': args.weights_init or 'heUniform'
-            },
-            'training': {
-                'epochs': args.epochs or 50,
-                'learning_rate': args.learning_rate or 0.01,
-                'batch_size': args.batch_size or 32,
-                'loss': args.loss or 'binaryCrossentropy'
-            }
-        }
+    if data_file != "datasets/test_set.csv" and args.predict:
+        print("Please, split your dataset with the correct flags before predict the set if you have not.")
+        print("Or, give the correct set of test.")
+        return 1
+    if data_file != "datasets/train_set.csv" and not args.split and not args.predict:
+        print("Please, split your dataset with the correct flags before training the set if you have not.")
+        print("Or, give the correct set of training.")
+        return 1
 
-    config = validate_config(config, X.shape)
-    print(args.epochs)
+    X, Y, args.dataset = load_dataset(args.dataset)
+    X, norm_params = normalize(X)
+    print(f"✓ X normalized: mean={X.mean():.4f}, std={X.std():.4f}")
 
-    if args.loss == 'categoricalCrossentropy' or config['training']['loss'] == 'categoricalCrossentropy':
-        Y = np.hstack((1 - Y, Y))  # Convertir en one-hot pour 2 classes
-    
+    config = merge_config(args, X.shape)
+    config = validate_config(config)
+    # if args.loss == 'categoricalCrossentropy' or config['training']['loss'] == 'categoricalCrossentropy':
+    #     Y = np.hstack((1 - Y, Y))  # Convertir en one-hot pour 2 classes
     mlp = MyMLP(config, norm_params)
 
     # Détection du mode
@@ -315,14 +61,8 @@ def main():
         
     else:
         # PHASE DE TRAINING (par défaut)
-        valid_set = np.array(lire_csv("datasets/valid_set.csv"))
-        if valid_set is None:
-            print("Error: valid_set is None.")
-            return 1
-
-        x_valid = valid_set[:, 2:].astype(np.float64)
+        x_valid, y_valid, valid_set = load_dataset("datasets/valid_set.csv")
         x_valid = apply_normalization(x_valid, norm_params)
-        y_valid = np.where(valid_set[:, 1:2] == 'B', 0.0, 1.0).astype(np.float64)
         if args.loss == 'categoricalCrossentropy' or config['training']['loss'] == 'categoricalCrossentropy':
             y_valid = np.hstack((1 - y_valid, y_valid))  # Convertir en one-hot pour 2 classes
         print(f"x_train shape : {X.shape}")
