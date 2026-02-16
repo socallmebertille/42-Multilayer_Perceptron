@@ -150,18 +150,27 @@ New weights = old weights - (learning rate × weight gradient)
 
 ```
 multilayer-perceptron/
-├── mlp.py                 # Main entry point (lightweight)
-├── src/
-│   ├── split_data.py
-│   ├── layers.py          # Definition of layers
-│   ├── my_mlp.py          # Class MLP
-│   └── utils.py
 ├── config/
 │   └── network_config.txt # Exemple de config
-└── datasets/              # Created with the splitting flag
-    ├── test_set.csv
-    ├── train_set.csv
-    └── valid_set.csv
+├── datasets/              # Created with the splitting flag
+│   ├── test_set.csv
+│   ├── train_set.csv
+│   └── valid_set.csv
+├── src/
+│   ├── activations.py
+│   ├── config.py
+│   ├── losses.py
+│   ├── my_mlp.py          # Class MLP
+│   ├── parsing.py
+│   ├── preprocessing.py
+│   ├── split_data.py
+│   └── utils.py
+├── test/                 # Script bash testeur 
+|   ├── cli_parsing.sh
+|   ├── config_parsing.sh
+|   ├── file_management.sh
+|   └── mlp_training.sh
+└── mlp.py                 # Main entry point (lightweight)
 
 ```
 
