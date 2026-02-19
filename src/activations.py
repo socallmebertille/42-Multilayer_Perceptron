@@ -17,6 +17,8 @@ def softmax(z):
     Transforme un vecteur de nombres en probabilités qui somment à 1
     """
     exp_z = np.exp(z - np.max(z, axis=1, keepdims=True))  # soustraction pour stabilité numérique
+    # print(f"exp_z shape: {exp_z.shape}, exp_z sample: {exp_z[0]}")
+    
     return exp_z / np.sum(exp_z, axis=1, keepdims=True)
 
 def softmax_derivative(a):

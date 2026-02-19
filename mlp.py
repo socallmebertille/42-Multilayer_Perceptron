@@ -37,14 +37,17 @@ def main():
         return 1
 
     X, Y, args.dataset = load_dataset(args.dataset)
-    X, norm_params = normalize(X)
-    print(f"✓ X normalized: mean={X.mean():.4f}, std={X.std():.4f}")
+    # X, norm_params = normalize(X)
+    # print(f"✓ X normalized: mean={X.mean():.4f}, std={X.std():.4f}")
 
     config = merge_config(args, X.shape)
     config = validate_config(config)
-    # if args.loss == 'categoricalCrossentropy' or config['training']['loss'] == 'categoricalCrossentropy':
-    #     Y = np.hstack((1 - Y, Y))  # Convertir en one-hot pour 2 classes
-    mlp = MyMLP(config, norm_params)
+    
+    # Ne one-hot Y que si on est en mode training (pas predict)
+    if not args.predict and (args.loss == 'categoricalCrossentropy' or config['training']['loss'] == 'categoricalCrossentropy'):
+        Y = np.hstack((1 - Y, Y))  # Convertir en one-hot pour 2 classes
+    
+    # mlp = MyMLP(config, norm_params)
 
     # Détection du mode
     if args.split:
@@ -54,12 +57,21 @@ def main():
         splitting_phase(args.dataset, args.split)
         
     elif args.predict:
+        mlp = MyMLP(config, None)
         # PHASE DE PRÉDICTION
-        print(f"> loading model '{args.predict}' from disk...")
         mlp.load(args.predict)
+        print(f"> loss model : {mlp.config['training']['loss']}")
+        print(f"> Y shape before one-hot: {Y.shape}")
+        # One-hot Y selon la loss du modèle chargé (pas celle du config initial)
+        if mlp.config['training']['loss'] == 'categoricalCrossentropy' and Y.shape[1] == 1:
+            Y = np.hstack((1 - Y, Y))
+            print(f"> Y shape after one-hot: {Y.shape}")
         mlp.predict(X, Y)
         
     else:
+        X, norm_params = normalize(X)
+        print(f"✓ X normalized: mean={X.mean():.4f}, std={X.std():.4f}")
+        mlp = MyMLP(config, norm_params)
         # PHASE DE TRAINING (par défaut)
         x_valid, y_valid, valid_set = load_dataset("datasets/valid_set.csv")
         x_valid = apply_normalization(x_valid, norm_params)

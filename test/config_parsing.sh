@@ -17,9 +17,6 @@ run_test() {
         echo -e "${GREEN}[OK]${NC} $NAME"
     elif [ $EXIT -ne 0 ] && [ "$EXPECT_FAIL" = "true" ]; then
         echo -e "${GREEN}[OK]${NC} $NAME (failure expected)"
-        # echo "---- OUTPUT ----"
-        # echo "$OUTPUT"
-        # echo "----------------"
     else
         echo -e "${RED}[FAIL]${NC} $NAME (exit code $EXIT)"
         echo "---- OUTPUT ----"

@@ -24,7 +24,7 @@ def parse_config_file(path):
     with open(path) as f:
 
         for line in f:
-            line = line.strip()
+            line = line.strip() # strip : supprimer les espaces au début et à la fin de la ligne
 
             if not line or line.startswith("#"):
                 continue
@@ -55,7 +55,7 @@ def merge_config(args, X_shape):
 
     if args.config:
         file_config = parse_config_file(args.config)
-        config['network'].update(file_config['network'])
+        config['network'].update(file_config['network']) # update : ajoute ou remplace seulement les clés présentes dans file_config['network'], mais conserve le reste
         config['training'].update(file_config['training'])
 
     if args.layer:
@@ -68,8 +68,15 @@ def merge_config(args, X_shape):
         config['training']['batch_size'] = args.batch_size
     if args.loss:
         config['training']['loss'] = args.loss
-
-    config['network']['input_size'] = X_shape[1]
+        
+    if args.input_size:
+        config['network']['input_size'] = args.input_size
+    else:
+        config['network']['input_size'] = X_shape[1]
+    if args.output_size:
+        config['network']['output_size'] = args.output_size
+    else:
+        config['network']['output_size'] = 1 if config['training']['loss'] == 'binaryCrossentropy' else 2
 
     return config
 

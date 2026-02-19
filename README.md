@@ -165,12 +165,13 @@ multilayer-perceptron/
 │   ├── preprocessing.py
 │   ├── split_data.py
 │   └── utils.py
-├── test/                 # Script bash testeur 
+├── test/                  # Script bash testeur 
 |   ├── cli_parsing.sh
 |   ├── config_parsing.sh
 |   ├── file_management.sh
 |   └── mlp_training.sh
-└── mlp.py                 # Main entry point (lightweight)
+├── mlp.py                 # Main entry point (lightweight)
+└── saved_model.npy        # Model saved by the training flag
 
 ```
 

@@ -12,18 +12,16 @@ class MyMLP:
         self.weights = []
         self.biases = []
 
-        # Construire l'architecture du réseau
         self._build_network()
     
     def _build_network(self):
         """Construit les couches avec initialisation des poids"""
         # Architecture complète : [input] -> [hidden layers] -> [output]
         layer_sizes = (
-            [self.config['network']['input_size']] +      # [30]
+            [self.config['network']['input_size']] +       # [30]
             self.config['network']['layer'] +              # [24, 24, 24]
             [self.config['network']['output_size']]        # [1]
-        )
-        # Résultat : [30, 24, 24, 24, 1]
+        )                                                  # Résultat : [30, 24, 24, 24, 1]
         
         print(f"Network architecture: {layer_sizes}")
         
@@ -35,7 +33,9 @@ class MyMLP:
                 layer_sizes[i + 1],  # output de cette couche
                 self.config['network']['weights_init']
             )
-            b = np.zeros(layer_sizes[i + 1])  # Un biais par neurone de sortie
+            # b = np.zeros(layer_sizes[i + 1])  # Un biais par neurone de sortie
+            b = np.zeros((1, layer_sizes[i + 1]))
+
             
             self.weights.append(W)
             self.biases.append(b)
@@ -143,7 +143,7 @@ class MyMLP:
 
         # Pour l'early stopping
         best_val_loss = float('inf')
-        patience = 10  # Nombre d'epochs sans amélioration avant d'arrêter
+        patience = 5  # Nombre d'epochs sans amélioration avant d'arrêter
         patience_counter = 0
         best_weights = None
         best_biases = None
@@ -200,38 +200,57 @@ class MyMLP:
                 print(f"  → New best validation loss: {best_val_loss:.4f}")
             else:
                 patience_counter += 1
-                if patience_counter >= patience:
+                if patience_counter >= patience:# and best_val_loss < float(0.1):
                     print(f"\n✓ Early stopping at epoch {epoch+1}")
                     print(f"  Best validation loss was {best_val_loss:.4f} at epoch {epoch+1-patience}")
                     # Restaurer les meilleurs poids
                     self.weights = best_weights
                     self.biases = best_biases
                     break
+    
+        # PLOT courbe train/validation loss
 
 
     def predict(self, X, Y):
         nb_samples = X.shape[0]
         X = apply_normalization(X, self.norm_params)
-        y_pred = self.forward(X)
-        print(f'ypred : {y_pred[:5]}')
-        for i in range(nb_samples):
-            # Prediction logic here
-            if self.config['training']['loss'] == 'binaryCrossentropy' and self.config['network']['output_size'] == 1:
-                y_pred[i] = 1 if y_pred[i] >= 0.5 else 0
-                print(f"-> ({int(Y[i][0])}, {y_pred[i].astype(np.int16)}) - raw[ {y_pred[i]} {1 - y_pred[i]} ]")
-            else:
-                prob_class_0 = y_pred[i][0]
-                prob_class_1 = y_pred[i][1]
-                y_pred[i] = 0 if prob_class_0 >= prob_class_1 else 1
-                print(f"-> ({int(Y[i][0])}, {y_pred[i][0].astype(np.int16)}) - raw[ {prob_class_0:.4f} {prob_class_1:.4f} ]")
+        y_pred_probs = self.forward(X)  # Garder les probas intactes
+        print(f'ypred : {y_pred_probs[:5]}')
         
-        if self.config['training']['loss'] == 'categoricalCrossentropy':
-            correct_predictions = sum(1 for i in range(nb_samples) if y_pred[i][0] == Y[i])
+        # Détecter multi-classes selon la forme de y_pred (plus fiable que config)
+        is_multiclass = y_pred_probs.ndim == 2 and y_pred_probs.shape[1] > 1
+        
+        # Convertir probas en labels prédits (AVANT la boucle, pas dedans)
+        if is_multiclass:
+            y_pred_labels = np.argmax(y_pred_probs, axis=1)
+            y_true_labels = np.argmax(Y, axis=1) if Y.ndim == 2 and Y.shape[1] > 1 else Y.flatten().astype(int)
         else:
-            correct_predictions = sum(1 for i in range(nb_samples) if y_pred[i] == Y[i])
-        print(f"> correctly predicted : ({correct_predictions}/{nb_samples})")
-        print(f"> loss (mean squarred error) : {np.mean((y_pred - Y) ** 2):.4f}")
-        print(f"> loss (binary crossentropy) : {binary_crossentropy(Y, y_pred):.4f}")
+            y_pred_labels = (y_pred_probs >= 0.5).astype(int).flatten()
+            y_true_labels = Y.flatten().astype(int)
+        
+        # Affichage ligne par ligne
+        for i in range(nb_samples):
+            if is_multiclass and y_pred_probs.shape[1] >= 2:
+                # Multi-classes : afficher les 2 premières probas
+                print(f"-> ({y_true_labels[i]}, {y_pred_labels[i]}) - raw[ {y_pred_probs[i, 0]:.3f}  {y_pred_probs[i, 1]:.3f} ]")
+            else:
+                # Binaire : afficher proba et 1-proba
+                prob = y_pred_probs[i, 0] if y_pred_probs.ndim == 2 else y_pred_probs[i]
+                print(f"-> ({y_true_labels[i]}, {y_pred_labels[i]}) - raw[ {prob:.3f}  {1 - prob:.3f} ]")
+        
+        # Accuracy
+        correct = np.sum(y_pred_labels == y_true_labels)
+        print(f"> correctly predicted : ({correct}/{nb_samples})")
+        
+        # Loss sur les probas (pas sur les labels !)
+        if self.config['training']['loss'] == 'categoricalCrossentropy':
+            loss = categorical_crossentropy(Y, y_pred_probs)
+            print(f"> loss (categorical crossentropy) : {loss:.4f}")
+        else:
+            mse = np.mean((y_pred_probs.T - Y.flatten()) ** 2)
+            bce = binary_crossentropy(Y, y_pred_probs)
+            print(f"> loss (mean squared error) : {mse:.4f}")
+            print(f"> loss (binary crossentropy) : {bce:.4f}")
 
     def save(self, path):
         try:
@@ -241,14 +260,14 @@ class MyMLP:
                 'config': self.config,
                 'norm_params': self.norm_params
             }
-            np.save(path, model, allow_pickle=True)
+            np.save(path, model, allow_pickle=True) # allow_pickle : pour sauvegarder objets python complexes (comme dict ici)
             print(f"> saving model '{path}' to disk...")
         except Exception as e:
             print(f"Error while saving model to {path} : {e}")
             return
 
     def load(self, path):
-        model = np.load(path, allow_pickle=True).item()
+        model = np.load(path, allow_pickle=True).item() # allow_pickle : pour charger objets python complexes (comme dict ici) et item() : pour accéder au dict lui-même (car np.load retourne un array d'un seul élément qui est le dict)
         self.weights = model['weights']
         self.biases = model['biases']
         self.config = model['config']
