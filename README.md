@@ -32,7 +32,7 @@
 uv venv                                         # creation
 source .venv/bin/activate                       # activation
 
-uv pip install numpy                            # installation of dependencies
+uv pip install -r requirements.txt              # installation of dependencies (-r : read requirements from file)
 ```
 
 <h3>Mathematical concept</h3>

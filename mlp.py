@@ -20,7 +20,8 @@ def main():
     """
     Multi-Layer Perceptron (MLP) for binary classification.
     """
-
+    np.random.seed(42) # Pour rendre le comportement aléatoire reproductible
+    
     args = parse_arguments()
     data_file = args.dataset
     if not Path(data_file).exists():
@@ -37,18 +38,10 @@ def main():
         return 1
 
     X, Y, args.dataset = load_dataset(args.dataset)
-    # X, norm_params = normalize(X)
-    # print(f"✓ X normalized: mean={X.mean():.4f}, std={X.std():.4f}")
 
     config = merge_config(args, X.shape)
     config = validate_config(config)
     
-    # Ne one-hot Y que si on est en mode training (pas predict)
-    if not args.predict and (args.loss == 'categoricalCrossentropy' or config['training']['loss'] == 'categoricalCrossentropy'):
-        Y = np.hstack((1 - Y, Y))  # Convertir en one-hot pour 2 classes
-    
-    # mlp = MyMLP(config, norm_params)
-
     # Détection du mode
     if args.split:
         # PHASE DE SPLITTING
@@ -57,26 +50,27 @@ def main():
         splitting_phase(args.dataset, args.split)
         
     elif args.predict:
-        mlp = MyMLP(config, None)
         # PHASE DE PRÉDICTION
+        mlp = MyMLP(config, None)
         mlp.load(args.predict)
+
         print(f"> loss model : {mlp.config['training']['loss']}")
-        print(f"> Y shape before one-hot: {Y.shape}")
-        # One-hot Y selon la loss du modèle chargé (pas celle du config initial)
-        if mlp.config['training']['loss'] == 'categoricalCrossentropy' and Y.shape[1] == 1:
+        
+        if mlp.config['training']['loss'] == 'categoricalCrossentropy' and Y.shape[1] == 1: # one-hot Y
             Y = np.hstack((1 - Y, Y))
-            print(f"> Y shape after one-hot: {Y.shape}")
         mlp.predict(X, Y)
         
     else:
-        X, norm_params = normalize(X)
-        print(f"✓ X normalized: mean={X.mean():.4f}, std={X.std():.4f}")
-        mlp = MyMLP(config, norm_params)
         # PHASE DE TRAINING (par défaut)
+        X, norm_params = normalize(X)
+        mlp = MyMLP(config, norm_params)
         x_valid, y_valid, valid_set = load_dataset("datasets/valid_set.csv")
         x_valid = apply_normalization(x_valid, norm_params)
-        if args.loss == 'categoricalCrossentropy' or config['training']['loss'] == 'categoricalCrossentropy':
+
+        if args.loss == 'categoricalCrossentropy' and Y.shape[1] == 1: # one-hot Y
+            Y = np.hstack((1 - Y, Y))  # Convertir en one-hot pour 2 classes
             y_valid = np.hstack((1 - y_valid, y_valid))  # Convertir en one-hot pour 2 classes
+        
         print(f"x_train shape : {X.shape}")
         print(f"x_valid shape : {x_valid.shape}")
 

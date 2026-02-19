@@ -1,8 +1,9 @@
 import numpy as np
+import matplotlib.pyplot as plt
 
 from src.preprocessing import apply_normalization
-from src.activations import sigmoid, sigmoid_derivative, softmax, softmax_derivative, relu, relu_derivative
-from src.losses import binary_crossentropy, binary_crossentropy_derivative, categorical_crossentropy, categorical_crossentropy_derivative
+from src.activations import sigmoid, softmax, relu, relu_derivative
+from src.losses import binary_crossentropy, categorical_crossentropy
 
 class MyMLP:
 
@@ -22,24 +23,18 @@ class MyMLP:
             self.config['network']['layer'] +              # [24, 24, 24]
             [self.config['network']['output_size']]        # [1]
         )                                                  # Résultat : [30, 24, 24, 24, 1]
-        
         print(f"Network architecture: {layer_sizes}")
         
-        # Initialiser poids et biais pour chaque connexion entre couches
+        # Initialiser poids et biais pour chaque connexion entre couches (entre couche i et couche i+1)
         for i in range(len(layer_sizes) - 1):
-            # Créer les poids entre couche i et couche i+1
             W = self._initialize_weights(
                 layer_sizes[i],      # input de cette couche
                 layer_sizes[i + 1],  # output de cette couche
                 self.config['network']['weights_init']
             )
-            # b = np.zeros(layer_sizes[i + 1])  # Un biais par neurone de sortie
-            b = np.zeros((1, layer_sizes[i + 1]))
-
-            
+            b = np.zeros((1, layer_sizes[i + 1])) # Un biais par neurone de sortie
             self.weights.append(W)
             self.biases.append(b)
-            
             print(f"  Layer {i}: W shape = {W.shape}, b shape = {b.shape}")
 
     def _initialize_weights(self, n_in, n_out, method):
@@ -105,8 +100,8 @@ class MyMLP:
         grads_b = []
         
         # 1. Erreur de la couche de sortie
-        # Pour sigmoid + binary crossentropy, la formule se simplifie !
-        delta = self.activations[-1] - y_true  # ŷ - y (SUPER SIMPLE !)
+        # Pour sigmoid + binary crossentropy et softmax + categorical crossentropy, la formule se simplifie
+        delta = self.activations[-1] - y_true  # ŷ - y
         
         # 2. Remonter couche par couche (de la fin vers le début)
         for i in range(len(self.weights) - 1, -1, -1):
@@ -125,7 +120,7 @@ class MyMLP:
                 delta = (delta @ self.weights[i].T) * relu_derivative(self.z_values[i-1])
         
         return grads_w, grads_b
-    
+
     def update_weights(self, grads_w, grads_b):
         """
         Met à jour les poids avec la règle simple :
@@ -137,6 +132,29 @@ class MyMLP:
             self.weights[i] -= lr * grads_w[i]
             self.biases[i] -= lr * grads_b[i]
 
+    def _get_labels(self, y_pred, y_true):
+        """
+        Convertit probabilités → labels pour binary et multiclass
+        """
+        is_multiclass = y_pred.ndim == 2 and y_pred.shape[1] > 1
+        
+        if is_multiclass:
+            pred_labels = np.argmax(y_pred, axis=1)
+            
+            if y_true.ndim == 2 and y_true.shape[1] > 1:
+                true_labels = np.argmax(y_true, axis=1)
+            else:
+                true_labels = y_true.flatten().astype(int)
+        else:
+            pred_labels = (y_pred >= 0.5).astype(int).flatten()
+            true_labels = y_true.flatten().astype(int)
+        
+        return pred_labels, true_labels
+    
+    def _accuracy(self, y_pred, y_true):
+        pred_labels, true_labels = self._get_labels(y_pred, y_true)
+        return np.mean(pred_labels == true_labels)
+
     def train(self, X_train, y_train, X_valid, y_valid):
         epochs = self.config['training']['epochs']
         batch_size = self.config['training']['batch_size']
@@ -147,9 +165,12 @@ class MyMLP:
         patience_counter = 0
         best_weights = None
         best_biases = None
+        train_losses = []
+        valid_losses = []
+        train_accuracies = []
+        valid_accuracies = []
     
         for epoch in range(epochs):
-
             # 1. Mélanger les données
             indices = np.random.permutation(len(X_train))
             X_shuffled = X_train[indices]
@@ -178,14 +199,18 @@ class MyMLP:
             train_pred = self.forward(X_train)          
             valid_pred = self.forward(X_valid)
 
-            # Choisir la bonne loss
-            loss_fn = (categorical_crossentropy 
-                    if self.config['training']['loss'] == 'categoricalCrossentropy'
+            train_acc = self._accuracy(train_pred, y_train)
+            valid_acc = self._accuracy(valid_pred, y_valid)
+
+            train_accuracies.append(train_acc)
+            valid_accuracies.append(valid_acc)
+
+            loss_fn = (categorical_crossentropy if self.config['training']['loss'] == 'categoricalCrossentropy'
                     else binary_crossentropy)
-            
-            # Dans la boucle
             train_loss = loss_fn(y_train, train_pred)
             valid_loss = loss_fn(y_valid, valid_pred)
+            train_losses.append(train_loss)
+            valid_losses.append(valid_loss)
             
             # 7. Afficher
             print(f"epoch {epoch+1:02d}/{epochs} - loss: {train_loss:.4f} - val_loss: {valid_loss:.4f}")
@@ -194,22 +219,36 @@ class MyMLP:
             if valid_loss < best_val_loss:
                 best_val_loss = valid_loss
                 patience_counter = 0
-                # Sauvegarder les meilleurs poids
                 best_weights = [w.copy() for w in self.weights]
                 best_biases = [b.copy() for b in self.biases]
                 print(f"  → New best validation loss: {best_val_loss:.4f}")
             else:
                 patience_counter += 1
-                if patience_counter >= patience:# and best_val_loss < float(0.1):
+                if patience_counter >= patience:
                     print(f"\n✓ Early stopping at epoch {epoch+1}")
                     print(f"  Best validation loss was {best_val_loss:.4f} at epoch {epoch+1-patience}")
-                    # Restaurer les meilleurs poids
                     self.weights = best_weights
                     self.biases = best_biases
                     break
     
         # PLOT courbe train/validation loss
+        plt.plot(train_losses, label='training loss')
+        plt.plot(valid_losses, label='validation loss')
+        plt.xlabel('Epochs')
+        plt.ylabel('Loss')
+        plt.title('Training and Validation Loss')
+        plt.legend()
+        plt.show()
 
+        # PLOT courbe train/validation accuracy
+        plt.plot(train_accuracies, label='training acc')
+        plt.plot(valid_accuracies, label='validation acc')
+        plt.xlabel('Epochs')
+        plt.ylabel('Accuracy')
+        plt.title('Learning Curves')
+        plt.legend()
+        plt.show()
+    
 
     def predict(self, X, Y):
         nb_samples = X.shape[0]
@@ -221,12 +260,7 @@ class MyMLP:
         is_multiclass = y_pred_probs.ndim == 2 and y_pred_probs.shape[1] > 1
         
         # Convertir probas en labels prédits (AVANT la boucle, pas dedans)
-        if is_multiclass:
-            y_pred_labels = np.argmax(y_pred_probs, axis=1)
-            y_true_labels = np.argmax(Y, axis=1) if Y.ndim == 2 and Y.shape[1] > 1 else Y.flatten().astype(int)
-        else:
-            y_pred_labels = (y_pred_probs >= 0.5).astype(int).flatten()
-            y_true_labels = Y.flatten().astype(int)
+        y_pred_labels, y_true_labels = self._get_labels(y_pred_probs, Y)
         
         # Affichage ligne par ligne
         for i in range(nb_samples):
@@ -251,6 +285,7 @@ class MyMLP:
             bce = binary_crossentropy(Y, y_pred_probs)
             print(f"> loss (mean squared error) : {mse:.4f}")
             print(f"> loss (binary crossentropy) : {bce:.4f}")
+
 
     def save(self, path):
         try:

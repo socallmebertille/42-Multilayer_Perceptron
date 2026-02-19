@@ -7,10 +7,6 @@ def sigmoid(z):
     """
     return 1 / (1 + np.exp(-np.clip(z, -500, 500)))  # clip pour éviter overflow
 
-def sigmoid_derivative(a):
-    """Dérivée de sigmoid (pour backprop)"""
-    return a * (1 - a)
-
 def softmax(z):
     """
     Softmax pour la sortie (classification multi-classes)
@@ -20,12 +16,6 @@ def softmax(z):
     # print(f"exp_z shape: {exp_z.shape}, exp_z sample: {exp_z[0]}")
     
     return exp_z / np.sum(exp_z, axis=1, keepdims=True)
-
-def softmax_derivative(a):
-    """Dérivée de softmax (pour backprop)"""
-    # Note : en pratique, on utilise souvent une simplification avec la cross-entropy
-    s = a.reshape(-1,1)
-    return np.diagflat(s) - np.dot(s, s.T)
 
 def relu(z):
     """
