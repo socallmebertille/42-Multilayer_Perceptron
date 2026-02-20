@@ -232,8 +232,10 @@ class MyMLP:
                     break
     
         # PLOT courbe train/validation loss
-        plt.plot(train_losses, label='training loss')
-        plt.plot(valid_losses, label='validation loss')
+        epoch_axis = list(range(1, len(train_losses) + 1))
+        line_kwargs = {'marker': 'o'} if len(epoch_axis) == 1 else {}
+        plt.plot(epoch_axis, train_losses, label='training loss', **line_kwargs)
+        plt.plot(epoch_axis, valid_losses, label='validation loss', **line_kwargs)
         plt.xlabel('Epochs')
         plt.ylabel('Loss')
         plt.title('Training and Validation Loss')
@@ -241,8 +243,10 @@ class MyMLP:
         plt.show()
 
         # PLOT courbe train/validation accuracy
-        plt.plot(train_accuracies, label='training acc')
-        plt.plot(valid_accuracies, label='validation acc')
+        epoch_axis = list(range(1, len(train_accuracies) + 1))
+        line_kwargs = {'marker': 'o'} if len(epoch_axis) == 1 else {}
+        plt.plot(epoch_axis, train_accuracies, label='training acc', **line_kwargs)
+        plt.plot(epoch_axis, valid_accuracies, label='validation acc', **line_kwargs)
         plt.xlabel('Epochs')
         plt.ylabel('Accuracy')
         plt.title('Learning Curves')

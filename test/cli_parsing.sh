@@ -50,10 +50,10 @@ run_test "train : output_size < 1" true $EXEC --dataset datasets/train_set.csv -
 
 echo ""
 echo "-------------- FAIL wrong associated flag -----------------"
-run_test "train : wrong activation_output for categoricalCrossentropy" true $EXEC --dataset datasets/train_set.csv --output_size 2 --activation_output sigmoid
-run_test "train : wrong output_size for categoricalCrossentropy" true $EXEC --dataset datasets/train_set.csv --loss categoricalCrossentropy --output_size 3 --activation_output softmax
-run_test "train : wrong activation_output for categoricalCrossentropy" true $EXEC --dataset datasets/train_set.csv --output_size 1 --activation_output softmax
-run_test "train : wrong output_size for categoricalCrossentropy" true $EXEC --dataset datasets/train_set.csv --loss binaryCrossentropy --output_size 1 --activation_output softmax
+run_test "train : wrong output_size for binaryCrossentropy" true $EXEC --dataset datasets/train_set.csv --output_size 2 --activation_output sigmoid
+run_test "train : wrong activation_output for binaryCrossentropy" true $EXEC --dataset datasets/train_set.csv --loss binaryCrossentropy --activation_output softmax
+run_test "train : wrong output_size for categoricalCrossentropy" true $EXEC --dataset datasets/train_set.csv --output_size 1 --activation_output softmax
+run_test "train : wrong activation_output for categoricalCrossentropy" true $EXEC --dataset datasets/train_set.csv --loss categoricalCrossentropy --activation_output sigmoid
 
 echo ""
 echo "-------------- FAIL wrong flag -----------------"

@@ -39,7 +39,7 @@ echo "-------------- CLI configuration -----------------"
 run_test "train minimal" false $EXEC --dataset datasets/train_set.csv --layer 2 2 --epochs 1 --batch_size 2
 run_test "train with config flag subject" false $EXEC --dataset datasets/train_set.csv  --layer 24 24 24 --epochs 84 --loss categoricalCrossentropy --batch_size 8 --learning_rate 0.0314
 run_test "train categorical" false $EXEC --dataset datasets/train_set.csv --layer 2 2 --epochs 1 --batch_size 2 --loss categoricalCrossentropy --output_size 2 --activation_output softmax
-run_test "train binary" false $EXEC --dataset datasets/train_set.csv --layer 2 2 --epochs 1 --batch_size 2 --loss binaryCrossentropy --output_size 2 --activation_output softmax
+run_test "train binary" false $EXEC --dataset datasets/train_set.csv --layer 2 2 --epochs 1 --batch_size 2 --loss binaryCrossentropy --output_size 1 --activation_output sigmoid
 
 echo ""
 echo "-------------- Mixed configuration -----------------"

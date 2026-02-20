@@ -15,7 +15,6 @@ def load_dataset(path):
     if data is None or data.size == 0:
         print(f"Error: the dataset '{path}' is empty or could not be loaded.")
         sys.exit(1)
-    print(f"{data}") # Affiche les 5 premières lignes du dataset pour vérifier le chargement
     X = data[:, 2:].astype(np.float64)
     Y = np.where(data[:, 1:2] == 'B', 0.0, 1.0).astype(np.float64)
     return X, Y, data
