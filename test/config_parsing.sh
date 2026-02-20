@@ -30,8 +30,13 @@ echo "             Config Parsing Tests"
 echo "===================================================="
 
 # Échecs attendus
+echo ""
+echo "-------------- FAIL -----------------"
+
 run_test "config inexistant" true $EXEC --dataset datasets/train_set.csv --config config/missing.txt
 run_test "config epochs < 0" true $EXEC --dataset datasets/train_set.csv --config config/invalid_epochs.txt
 
 # Succès attendus
+echo ""
+echo "-------------- SUCCESS -----------------"
 run_test "config valide simple" false $EXEC --dataset datasets/train_set.csv --config config/simple_config.txt

@@ -30,11 +30,31 @@ echo "             CLI Parsing Tests"
 echo "===================================================="
 
 # Échecs attendus
-run_test "epochs < 0" true $EXEC --dataset datasets/train_set.csv --epochs -1
-run_test "batch_size < 0" true $EXEC --dataset datasets/train_set.csv --batch_size -5
-run_test "missing dataset" true $EXEC --layer 24 24 24 --epochs 84
+echo ""
+echo "-------------- FAIL numeric flag -----------------"
+
+run_test "split : non-numeric values" true $EXEC --dataset data.csv --split a,b
+run_test "split : value < 0" true $EXEC --dataset data.csv --split -1,0.0
+run_test "split : value > 1" true $EXEC --dataset data.csv --split 0.9,0.1
+
+run_test "train : epochs < 0" true $EXEC --dataset datasets/train_set.csv --epochs -1
+run_test "train : batch_size < 0" true $EXEC --dataset datasets/train_set.csv --batch_size -5
+
+echo ""
+echo "-------------- FAIL wrong flag -----------------"
+
+run_test "split : missing dataset" true $EXEC --split 0.7,0.15
+
+run_test "train : missing dataset" true $EXEC --layer 24 24 24 --epochs 84
+run_test "train : wrong dataset" true $EXEC --dataset datasets/test_set.csv --layer 24 24 24 --epochs 84
+
+run_test "test : missing dataset" true $EXEC --predict saved_model.npy
+run_test "test : wrong dataset" true $EXEC --dataset datasets/train_set.csv --predict saved_model.npy
 
 # Succès attendus
+echo ""
+echo "-------------- SUCCESS -----------------"
+
 run_test "without any config given" false $EXEC --dataset datasets/train_set.csv
 run_test "config minimale valide" false $EXEC --dataset datasets/train_set.csv --layer 24 24 24 --epochs 84
 run_test "loss categoricalCrossentropy valide" false $EXEC --dataset datasets/train_set.csv --layer 24 24 24 --epochs 84 --loss categoricalCrossentropy --output_size 2 --activation_output softmax
