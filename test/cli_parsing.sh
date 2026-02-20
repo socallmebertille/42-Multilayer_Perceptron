@@ -37,8 +37,23 @@ run_test "split : non-numeric values" true $EXEC --dataset data.csv --split a,b
 run_test "split : value < 0" true $EXEC --dataset data.csv --split -1,0.0
 run_test "split : value > 1" true $EXEC --dataset data.csv --split 0.9,0.1
 
+run_test "train : non-numeric layer" true $EXEC --dataset datasets/train_set.csv --layer a 24 24
+run_test "train : layer < 0" true $EXEC --dataset datasets/train_set.csv --layer -1 24 24
 run_test "train : epochs < 0" true $EXEC --dataset datasets/train_set.csv --epochs -1
-run_test "train : batch_size < 0" true $EXEC --dataset datasets/train_set.csv --batch_size -5
+run_test "train : learning_rate < 0" true $EXEC --dataset datasets/train_set.csv --learning_rate -0.01
+run_test "train : learning_rate > 1" true $EXEC --dataset datasets/train_set.csv --learning_rate 1.1
+run_test "train : batch_size < 0" true $EXEC --dataset datasets/train_set.csv --batch_size -1
+run_test "train : input_size < 0" true $EXEC --dataset datasets/train_set.csv --input_size -1
+run_test "train : input_size < 1" true $EXEC --dataset datasets/train_set.csv --input_size 0.9
+run_test "train : output_size < 0" true $EXEC --dataset datasets/train_set.csv --output_size -1
+run_test "train : output_size < 1" true $EXEC --dataset datasets/train_set.csv --output_size 0.9
+
+echo ""
+echo "-------------- FAIL wrong associated flag -----------------"
+run_test "train : wrong activation_output for categoricalCrossentropy" true $EXEC --dataset datasets/train_set.csv --output_size 2 --activation_output sigmoid
+run_test "train : wrong output_size for categoricalCrossentropy" true $EXEC --dataset datasets/train_set.csv --loss categoricalCrossentropy --output_size 3 --activation_output softmax
+run_test "train : wrong activation_output for categoricalCrossentropy" true $EXEC --dataset datasets/train_set.csv --output_size 1 --activation_output softmax
+run_test "train : wrong output_size for categoricalCrossentropy" true $EXEC --dataset datasets/train_set.csv --loss binaryCrossentropy --output_size 1 --activation_output softmax
 
 echo ""
 echo "-------------- FAIL wrong flag -----------------"

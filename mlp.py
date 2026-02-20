@@ -24,7 +24,6 @@ def main():
     """
     Multi-Layer Perceptron (MLP) for binary classification.
     """
-    np.random.seed(42) # Pour rendre le comportement aléatoire reproductible
     
     args = parse_arguments()
     data_file = args.dataset
