@@ -23,7 +23,6 @@ class MyMLP:
             self.config['network']['layer'] +              # [24, 24, 24]
             [self.config['network']['output_size']]        # [1]
         )                                                  # Résultat : [30, 24, 24, 24, 1]
-        print(f"Network architecture: {layer_sizes}")
         
         # Initialiser poids et biais pour chaque connexion entre couches (entre couche i et couche i+1)
         for i in range(len(layer_sizes) - 1):
@@ -35,7 +34,7 @@ class MyMLP:
             b = np.zeros((1, layer_sizes[i + 1])) # Un biais par neurone de sortie
             self.weights.append(W)
             self.biases.append(b)
-            print(f"  Layer {i}: W shape = {W.shape}, b shape = {b.shape}")
+            # print(f"  Layer {i}: W shape = {W.shape}, b shape = {b.shape}")
 
     def _initialize_weights(self, n_in, n_out, method):
         """Initialise une matrice de poids"""
@@ -59,30 +58,25 @@ class MyMLP:
         X: (batch_size, 30) → données d'entrée
         Returns: (batch_size, 1) → prédictions
         """
-        # On va stocker toutes les activations pour le backward
+        # Stocker les activations pour le backward
         self.activations = [X]  # a^(0) = X
         self.z_values = []      # Pour stocker les z de chaque couche
         
-        a = X.astype(np.float64)  # Activation de la couche actuelle (au début = input)
+        a = X.astype(np.float64)                     # 1. Activation de la couche actuelle (au début = input)
         
-        # Pour chaque couche (sauf la dernière)
-        for i in range(len(self.weights) - 1):
-            # 1. Calcul de z = a @ W + b
-            z = a @ self.weights[i] + self.biases[i]
+        for i in range(len(self.weights) - 1):       # 2. Pour chaque couche (sauf la dernière)
+            z = a @ self.weights[i] + self.biases[i] # 2.1. Calcul de z = a @ W + b
             self.z_values.append(z)
-            
-            # 2. Activation ReLU pour couches cachées
-            a = relu(z)
+            a = relu(z)                              # 2.2. Activation ReLU pour couches cachées
             self.activations.append(a)
         
-        # Dernière couche (output) avec sigmoid ou softmax
-        z = a @ self.weights[-1] + self.biases[-1]
+        z = a @ self.weights[-1] + self.biases[-1]   # 3.1. Dernière couche (output) avec sigmoid ou softmax
         self.z_values.append(z)
         
         if self.config['training']['loss'] == 'binaryCrossentropy'and self.config['network']['output_size'] == 1:
-            a = sigmoid(z)  # Probabilité entre 0 et 1
+            a = sigmoid(z)                          # 3.2. Probabilité entre 0 et 1
         else:
-            a = softmax(z)  # Probabilités pour multi-classes
+            a = softmax(z)                          # 3.2. Probabilités pour multi-classes
         self.activations.append(a)
         
         return a  # Prédiction finale
@@ -163,12 +157,9 @@ class MyMLP:
         best_val_loss = float('inf')
         patience = 5  # Nombre d'epochs sans amélioration avant d'arrêter
         patience_counter = 0
-        best_weights = None
-        best_biases = None
-        train_losses = []
-        valid_losses = []
-        train_accuracies = []
-        valid_accuracies = []
+        best_weights, best_biases = None, None
+        train_losses, valid_losses = [], []
+        train_accuracies, valid_accuracies = [], []
     
         for epoch in range(epochs):
             # 1. Mélanger les données

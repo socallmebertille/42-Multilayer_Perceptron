@@ -23,7 +23,8 @@ def main():
     """
     Multi-Layer Perceptron (MLP) for binary classification.
     """
-    
+    np.random.seed(42)  # Pour la reproductibilité des résultats de la phase de splitting (sujet p.10)
+
     args = parse_arguments()
     data_file = args.dataset
     if not Path(data_file).exists():
