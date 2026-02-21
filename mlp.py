@@ -70,10 +70,9 @@ def main():
         mlp = MyMLP(config, None)
         mlp.load(args.predict)
 
-        print(f"> loss model : {mlp.config['training']['loss']}")
-        
         if mlp.config['training']['loss'] == 'categoricalCrossentropy' and Y.shape[1] == 1: # one-hot Y
             Y = np.hstack((1 - Y, Y))
+            
         mlp.predict(X, Y)
         
     else:

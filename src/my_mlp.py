@@ -254,7 +254,6 @@ class MyMLP:
         nb_samples = X.shape[0]
         X = apply_normalization(X, self.norm_params)
         y_pred_probs = self.forward(X)  # Garder les probas intactes
-        print(f'ypred : {y_pred_probs[:5]}')
         
         # Détecter multi-classes selon la forme de y_pred (plus fiable que config)
         is_multiclass = y_pred_probs.ndim == 2 and y_pred_probs.shape[1] > 1
