@@ -63,29 +63,29 @@ def merge_config(args, X_shape):
         activation_output_set = 'activation_output' in file_config['network']
         output_size_set = 'output_size' in file_config['network']
 
-    if args.layer:
+    if args.layer is not None:
         config['network']['layer'] = args.layer
-    if args.epochs:
+    if args.epochs is not None:
         config['training']['epochs'] = args.epochs
-    if args.learning_rate:
+    if args.learning_rate is not None:
         config['training']['learning_rate'] = args.learning_rate
-    if args.batch_size:
+    if args.batch_size is not None:
         config['training']['batch_size'] = args.batch_size
-    if args.loss:
+    if args.loss is not None:
         config['training']['loss'] = args.loss
-    if args.activation_hidden:
+    if args.activation_hidden is not None:
         config['network']['activation_hidden'] = args.activation_hidden
-    if args.activation_output:
+    if args.activation_output is not None:
         config['network']['activation_output'] = args.activation_output
         activation_output_set = True
-    if args.weights_init:
+    if args.weights_init is not None:
         config['network']['weights_init'] = args.weights_init
         
-    if args.input_size:
+    if args.input_size is not None:
         config['network']['input_size'] = args.input_size
     else:
         config['network']['input_size'] = X_shape[1]
-    if args.output_size:
+    if args.output_size is not None:
         config['network']['output_size'] = args.output_size
         output_size_set = True
 

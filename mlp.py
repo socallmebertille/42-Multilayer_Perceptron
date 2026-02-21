@@ -48,7 +48,17 @@ def main():
     # Détection du mode
     if args.split:
         # PHASE DE SPLITTING
-        args.split = tuple(map(float, args.split.split(',')))
+        try:
+            args.split = tuple(map(float, args.split.split(',')))
+        except ValueError:
+            print("Error: split ratios must be numeric values.")
+            return 1
+        if len(args.split) != 2:
+            print("Error: split must be two values: train,valid.")
+            return 1
+        if any(r < 0.0 or r > 1.0 for r in args.split):
+            print("Error: split ratios must be between 0 and 1.")
+            return 1
         if sum(args.split) >= 1.0:
             print("Error: the sum of split ratios must be less than 1.0.")
             return 1

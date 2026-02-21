@@ -35,6 +35,7 @@ echo "-------------- FAIL -----------------"
 
 run_test "config inexistant" true $EXEC --dataset datasets/train_set.csv --config config/missing.txt
 run_test "config epochs < 0" true $EXEC --dataset datasets/train_set.csv --config config/invalid_epochs.txt
+run_test "config activation_output invalide" true $EXEC --dataset datasets/train_set.csv --config config/invalid_activation.txt
 
 # Succès attendus
 echo ""

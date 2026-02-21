@@ -1,0 +1,6 @@
+[network]
+activation_output = sigmoid
+output_size = 2
+
+[training]
+loss = categoricalCrossentropy
