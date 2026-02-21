@@ -7,6 +7,11 @@ def sigmoid(z):
     """
     return 1 / (1 + np.exp(-np.clip(z, -500, 500)))  # clip pour éviter overflow
 
+def sigmoid_derivative(z):
+    """Dérivée de Sigmoid (pour backprop)"""
+    s = sigmoid(z)
+    return s * (1 - s)
+
 def softmax(z):
     """
     Softmax pour la sortie (classification multi-classes)

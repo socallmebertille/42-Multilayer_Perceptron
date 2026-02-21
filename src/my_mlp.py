@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from src.preprocessing import apply_normalization
-from src.activations import sigmoid, softmax, relu, relu_derivative
+from src.activations import sigmoid, sigmoid_derivative, softmax, relu, relu_derivative
 from src.losses import binary_crossentropy, categorical_crossentropy
 
 class MyMLP:
@@ -48,6 +48,8 @@ class MyMLP:
             return np.random.uniform(-limit, limit, (n_in, n_out))
         elif method == 'xavierNormal':
             return np.random.randn(n_in, n_out) * np.sqrt(2 / (n_in + n_out))
+        elif method == 'random':
+            return np.random.randn(n_in, n_out) * 0.01
         else:
             raise ValueError(f"Unknown initialization: {method}")
 
@@ -65,15 +67,18 @@ class MyMLP:
         a = X.astype(np.float64)                     # 1. Activation de la couche actuelle (au début = input)
         
         for i in range(len(self.weights) - 1):       # 2. Pour chaque couche (sauf la dernière)
-            z = a @ self.weights[i] + self.biases[i] # 2.1. Calcul de z = a @ W + b
+            z = a @ self.weights[i] + self.biases[i] # 2.1. Calcul de z = a(l-1) @ W + b
             self.z_values.append(z)
-            a = relu(z)                              # 2.2. Activation ReLU pour couches cachées
+            if self.config['network']['activation_hidden'] == 'sigmoid': 
+                a = sigmoid(z)                       # 2.1. Calcul de la couche a(l) = f(z)
+            else:
+                a = relu(z)
             self.activations.append(a)
         
-        z = a @ self.weights[-1] + self.biases[-1]   # 3.1. Dernière couche (output) avec sigmoid ou softmax
+        z = a @ self.weights[-1] + self.biases[-1]  # 3.1. Dernière couche (output) avec sigmoid ou softmax
         self.z_values.append(z)
         
-        if self.config['training']['loss'] == 'binaryCrossentropy'and self.config['network']['output_size'] == 1:
+        if self.config['network']['activation_output'] == 'sigmoid':
             a = sigmoid(z)                          # 3.2. Probabilité entre 0 et 1
         else:
             a = softmax(z)                          # 3.2. Probabilités pour multi-classes
@@ -111,7 +116,10 @@ class MyMLP:
             # Si pas la première couche, propager l'erreur
             if i > 0:
                 # Propager l'erreur à la couche précédente
-                delta = (delta @ self.weights[i].T) * relu_derivative(self.z_values[i-1])
+                if self.config['network']['activation_hidden'] == 'sigmoid':
+                    delta = (delta @ self.weights[i].T) * sigmoid_derivative(self.z_values[i-1])
+                else:
+                    delta = (delta @ self.weights[i].T) * relu_derivative(self.z_values[i-1])
         
         return grads_w, grads_b
 
@@ -168,11 +176,8 @@ class MyMLP:
             y_shuffled = y_train[indices]
             
             # 2. Découper en mini-batches
-            num_batches = len(X_train) // batch_size
-            
-            for i in range(num_batches):
-                # Extraire un batch
-                start = i * batch_size
+            for start in range(0, len(X_train), batch_size):
+                # Extraire un batch (inclure le reste)
                 end = start + batch_size
                 X_batch = X_shuffled[start:end]
                 y_batch = y_shuffled[start:end]

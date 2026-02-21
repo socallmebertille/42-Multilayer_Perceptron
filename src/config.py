@@ -2,11 +2,8 @@ from pathlib import Path
 
 DEFAULT_CONFIG = {
     'network': {
-        'input_size': None,
         'layer': [24, 24],
-        'output_size': 1,
         'activation_hidden': 'relu',
-        'activation_output': 'sigmoid',
         'weights_init': 'heUniform'
     },
     'training': {
@@ -36,7 +33,7 @@ def parse_config_file(path):
 
             if key == "layer":
                 value = [int(x) for x in value.split(",")]
-            elif key in ["input_size", "output_size", "epochs", "batch_size"]:
+            elif key in ["epochs", "batch_size"]:
                 value = int(value)
             elif key == "learning_rate":
                 value = float(value)
@@ -53,15 +50,10 @@ def merge_config(args, X_shape):
         'training': DEFAULT_CONFIG['training'].copy()
     }
 
-    activation_output_set = False
-    output_size_set = False
-
     if args.config:
         file_config = parse_config_file(args.config)
         config['network'].update(file_config['network']) # update : ajoute ou remplace seulement les clés présentes dans file_config['network'], mais conserve le reste
         config['training'].update(file_config['training'])
-        activation_output_set = 'activation_output' in file_config['network']
-        output_size_set = 'output_size' in file_config['network']
 
     if args.layer is not None:
         config['network']['layer'] = args.layer
@@ -75,30 +67,18 @@ def merge_config(args, X_shape):
         config['training']['loss'] = args.loss
     if args.activation_hidden is not None:
         config['network']['activation_hidden'] = args.activation_hidden
-    if args.activation_output is not None:
-        config['network']['activation_output'] = args.activation_output
-        activation_output_set = True
     if args.weights_init is not None:
         config['network']['weights_init'] = args.weights_init
         
-    if args.input_size is not None:
-        config['network']['input_size'] = args.input_size
-    else:
-        config['network']['input_size'] = X_shape[1]
-    if args.output_size is not None:
-        config['network']['output_size'] = args.output_size
-        output_size_set = True
-
+    # Auto-set based on loss and dataset shape
+    config['network']['input_size'] = X_shape[1]
+    
     if config['training']['loss'] == 'binaryCrossentropy':
-        if not activation_output_set:
-            config['network']['activation_output'] = 'sigmoid'
-        if not output_size_set:
-            config['network']['output_size'] = 1
+        config['network']['output_size'] = 1
+        config['network']['activation_output'] = 'sigmoid'
     elif config['training']['loss'] == 'categoricalCrossentropy':
-        if not activation_output_set:
-            config['network']['activation_output'] = 'softmax'
-        if not output_size_set:
-            config['network']['output_size'] = 2
+        config['network']['output_size'] = 2
+        config['network']['activation_output'] = 'softmax'
 
     return config
 
@@ -110,25 +90,17 @@ def validate_config(config):
 
     if any(l <= 0 for l in net['layer']):
         raise ValueError("Invalid layer size")
-    if net['input_size'] is not None and net['input_size'] <= 0:
-        raise ValueError("Invalid input_size")
-    if net['output_size'] <= 0:
-        raise ValueError("Invalid output_size")
+    if net['activation_hidden'] not in ['sigmoid', 'relu']:
+        raise ValueError("Invalid activation_hidden")
+    if net['weights_init'] not in ['heUniform', 'heNormal', 'xavierUniform', 'xavierNormal', 'random']:
+        raise ValueError("Invalid weights_init")
     if train['epochs'] <= 0:
         raise ValueError("Invalid epochs")
     if not (0 < train['learning_rate'] <= 1):
         raise ValueError("Invalid learning_rate")
     if train['batch_size'] <= 0:
         raise ValueError("Invalid batch_size")
-    
-    if train['loss'] == 'binaryCrossentropy' and net['output_size'] != 1:
-        raise ValueError("For binaryCrossentropy loss, output_size must be 1")
-    if train['loss'] == 'categoricalCrossentropy' and net['output_size'] != 2:
-        raise ValueError("For categoricalCrossentropy loss, output_size must be 2")
-    
-    if train['loss'] == 'binaryCrossentropy' and net['activation_output'] != 'sigmoid':
-        raise ValueError("For binaryCrossentropy loss, activation_output must be sigmoid")
-    if train['loss'] == 'categoricalCrossentropy' and net['activation_output'] != 'softmax':
-        raise ValueError("For categoricalCrossentropy loss, activation_output must be softmax")
+    if train['loss'] not in ['binaryCrossentropy', 'categoricalCrossentropy']:
+        raise ValueError("Invalid loss")
 
     return config

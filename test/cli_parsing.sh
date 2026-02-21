@@ -47,19 +47,11 @@ run_test "train : learning_rate > 1" true $EXEC --dataset datasets/train_set.csv
 run_test "train : learning_rate = 0" true $EXEC --dataset datasets/train_set.csv --learning_rate 0
 run_test "train : batch_size < 0" true $EXEC --dataset datasets/train_set.csv --batch_size -1
 run_test "train : batch_size = 0" true $EXEC --dataset datasets/train_set.csv --batch_size 0
-run_test "train : input_size < 0" true $EXEC --dataset datasets/train_set.csv --input_size -1
-run_test "train : input_size < 1" true $EXEC --dataset datasets/train_set.csv --input_size 0.9
-run_test "train : input_size = 0" true $EXEC --dataset datasets/train_set.csv --input_size 0
-run_test "train : output_size < 0" true $EXEC --dataset datasets/train_set.csv --output_size -1
-run_test "train : output_size < 1" true $EXEC --dataset datasets/train_set.csv --output_size 0.9
-run_test "train : output_size = 0" true $EXEC --dataset datasets/train_set.csv --output_size 0
 
 echo ""
-echo "-------------- FAIL wrong associated flag -----------------"
-run_test "train : wrong output_size for binaryCrossentropy" true $EXEC --dataset datasets/train_set.csv --output_size 2 --activation_output sigmoid
-run_test "train : wrong activation_output for binaryCrossentropy" true $EXEC --dataset datasets/train_set.csv --loss binaryCrossentropy --activation_output softmax
-run_test "train : wrong output_size for categoricalCrossentropy" true $EXEC --dataset datasets/train_set.csv --output_size 1 --activation_output softmax
-run_test "train : wrong activation_output for categoricalCrossentropy" true $EXEC --dataset datasets/train_set.csv --loss categoricalCrossentropy --activation_output sigmoid
+echo "-------------- FAIL invalid choices -----------------"
+run_test "train : activation_hidden tanh (not allowed)" true $EXEC --dataset datasets/train_set.csv --activation_hidden tanh
+run_test "train : weights_init invalid" true $EXEC --dataset datasets/train_set.csv --weights_init invalid_method
 
 echo ""
 echo "-------------- FAIL wrong flag -----------------"
@@ -78,4 +70,4 @@ echo "-------------- SUCCESS -----------------"
 
 run_test "without any config given" false $EXEC --dataset datasets/train_set.csv
 run_test "config minimale valide" false $EXEC --dataset datasets/train_set.csv --layer 24 24 24 --epochs 84
-run_test "loss categoricalCrossentropy valide" false $EXEC --dataset datasets/train_set.csv --layer 24 24 24 --epochs 84 --loss categoricalCrossentropy --output_size 2 --activation_output softmax
+run_test "loss categoricalCrossentropy valide" false $EXEC --dataset datasets/train_set.csv --layer 24 24 24 --epochs 84 --loss categoricalCrossentropy

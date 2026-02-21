@@ -178,15 +178,10 @@ multilayer-perceptron/
 <h3>Usage</h3>
 
 ```bash
-usage: mlp.py [-h] --dataset DATASET [--split SPLIT]
-              [--predict PREDICT] [--config CONFIG]
-              [--layer LAYER [LAYER ...]] [--epochs EPOCHS]
-              [--learning_rate LEARNING_RATE] [--batch_size BATCH_SIZE]
-              [--loss {binaryCrossentropy,categoricalCrossentropy}]
-              [--input_size INPUT_SIZE] [--output_size OUTPUT_SIZE]
-              [--activation_hidden {sigmoid,relu,tanh}]
-              [--activation_output {sigmoid,softmax,linear}]
-              [--weights_init {heUniform,heNormal,xavierUniform,random}]
+usage: mlp.py [-h] --dataset DATASET [--split SPLIT] [--predict PREDICT] [--config CONFIG] [--layer LAYER [LAYER ...]]
+              [--epochs EPOCHS] [--learning_rate LEARNING_RATE] [--batch_size BATCH_SIZE]
+              [--loss {binaryCrossentropy,categoricalCrossentropy}] [--activation_hidden {sigmoid,relu}]
+              [--weights_init {heUniform,heNormal,xavierUniform,xavierNormal,random}]
 
 Multilayer Perceptron for binary classification
 
@@ -205,14 +200,8 @@ options:
                         Batch size ∈ ℕ*
   --loss {binaryCrossentropy,categoricalCrossentropy}
                         Loss function
-  --input_size INPUT_SIZE
-                        Input size ∈ [1, +inf] (number of features)
-  --output_size OUTPUT_SIZE
-                        Output size ∈ [1, +inf] (number of classes)
-  --activation_hidden {sigmoid,relu,tanh}
+  --activation_hidden {sigmoid,relu}
                         Activation function for hidden layers
-  --activation_output {sigmoid,softmax,linear}
-                        Activation function for output layer
-  --weights_init {heUniform,heNormal,xavierUniform,random}
+  --weights_init {heUniform,heNormal,xavierUniform,xavierNormal,random}
                         Weights initialization method
 ```

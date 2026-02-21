@@ -1,9 +1,6 @@
 [network]
-input_size = 30
 layer = 24,24,24
-output_size = 2
 activation_hidden = sigmoid
-activation_output = softmax
 weights_init = heUniform
 
 [training]

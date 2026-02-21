@@ -1,6 +1,6 @@
 [network]
-activation_output = sigmoid
-output_size = 2
+layer = 24,24,24
 
 [training]
-loss = categoricalCrossentropy
+loss = binaryCrossentropy
+epochs = -1
