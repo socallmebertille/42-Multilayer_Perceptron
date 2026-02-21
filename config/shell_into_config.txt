@@ -1,0 +1,11 @@
+[network]
+layer = 24,24,24
+activation_hidden = sigmoid
+weights_init = heUniform
+
+[training]
+loss = categoricalCrossentropy
+learning_rate = 0.0314
+batch_size = 8
+epochs = 84
+shell

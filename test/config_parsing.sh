@@ -34,8 +34,11 @@ echo ""
 echo "-------------- FAIL -----------------"
 
 run_test "config inexistant" true $EXEC --dataset datasets/train_set.csv --config config/missing.txt
+run_test "config invalid epochs" true $EXEC --dataset datasets/train_set.csv --config config/invalid_epochs_bis.txt
 run_test "config epochs < 0" true $EXEC --dataset datasets/train_set.csv --config config/invalid_epochs.txt
-run_test "config invalid epochs" true $EXEC --dataset datasets/train_set.csv --config config/invalid_activation.txt
+run_test "config invalid key flag" true $EXEC --dataset datasets/train_set.csv --config config/invalid_key.txt
+run_test "config invalid loss" true $EXEC --dataset datasets/train_set.csv --config config/invalid_loss.txt
+run_test "config with a 'shell'" true $EXEC --dataset datasets/train_set.csv --config config/shell_into_config.txt
 run_test "config file mal formaté" true $EXEC --dataset datasets/train_set.csv --config config/wrong_config.txt
 
 # Succès attendus

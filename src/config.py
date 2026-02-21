@@ -28,6 +28,8 @@ def parse_config_file(path):
             if line.startswith("["):
                 section = line[1:-1]
                 continue
+            if "=" not in line:
+                raise ValueError(f"Invalid line in config file: {line}")
 
             key, value = map(str.strip, line.split("="))
 
@@ -37,6 +39,8 @@ def parse_config_file(path):
                 value = int(value)
             elif key == "learning_rate":
                 value = float(value)
+            elif key not in DEFAULT_CONFIG[section]:
+                raise ValueError(f"Unknown config key: {key} in section [{section}]")
 
             config[section][key] = value
 
