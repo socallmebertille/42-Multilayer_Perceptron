@@ -21,6 +21,9 @@
   <ul class="list-disc pl-4 my-0">
     <li class="my-0"><a href="#architecture">Architecture</a></li>
     <li class="my-0"><a href="#usage">Usage</a></li>
+    <li class="my-0"><a href="#splitting-phase">Splitting phase</a></li>
+    <li class="my-0"><a href="#training">Training</a></li>
+    <li class="my-0"><a href="#prediction">Prediction</a></li>
   </ul>
   </li>
 </ul>
@@ -178,9 +181,10 @@ multilayer-perceptron/
 <h3>Usage</h3>
 
 ```bash
-usage: mlp.py [-h] --dataset DATASET [--split SPLIT] [--predict PREDICT] [--config CONFIG] [--layer LAYER [LAYER ...]]
-              [--epochs EPOCHS] [--learning_rate LEARNING_RATE] [--batch_size BATCH_SIZE]
-              [--loss {binaryCrossentropy,categoricalCrossentropy}] [--activation_hidden {sigmoid,relu}]
+usage: mlp.py [-h] --dataset DATASET [--split SPLIT] [--predict PREDICT] [--config CONFIG]
+              [--layer LAYER [LAYER ...]] [--epochs EPOCHS] [--learning_rate LEARNING_RATE]
+              [--batch_size BATCH_SIZE] [--loss {binaryCrossentropy,categoricalCrossentropy}]
+              [--activation_hidden {sigmoid,relu}]
               [--weights_init {heUniform,heNormal,xavierUniform,xavierNormal,random}]
 
 Multilayer Perceptron for binary classification
@@ -205,3 +209,52 @@ options:
   --weights_init {heUniform,heNormal,xavierUniform,xavierNormal,random}
                         Weights initialization method
 ```
+
+<h3>Splitting phase</h3>
+
+Run :
+```
+python mlp.py --dataset [data_file.csv] --split 0.[x],0.[y]
+```
+
+Implementation :
+
+The program creates `datasets` folder which contains the 3 following files : 
+- **`train_set.csv`** : given to the training phase, the model will learn from it
+- **`valid_set.csv`** : loaded by the training program, the model will be validated based on it
+- **`test_set.csv`** : given to the prediction phase, the model will return predicted and true values
+
+<h3>Training</h3>
+
+Run :
+```
+python mlp.py --dataset datasets/train_set.csv --layer [x] [y] [optionnal: z]
+```
+
+Implementation :
+
+The program trains the neural network on the training set and validates it on the validation set :
+- **Normalizes** : the input data (mean = 0, std = 1) to improve convergence
+- **Builds the network** : with specified architecture and initializes weights
+- **Iterates** : through epochs, shuffling data and processing mini-batches
+- **Performs** : forward pass (prediction) → computes loss → backward pass (gradients) → updates weights
+- **Monitors** : validation loss for early stopping (patience = 5 epochs without improvement)
+- **Displays** : training/validation loss and accuracy curves at the end
+- **Saves** : the best model to `saved_model.npy` 
+
+<h3>Prediction</h3>
+
+Run :
+```
+python mlp.py --dataset datasets/test_set.csv --predict saved_model.npy
+```
+
+Implementation :
+
+The program loads a trained model and evaluates it on the test set :
+- **Loads** : the saved model (weights, biases, config, normalization parameters)
+- **Normalizes** : the test data using training statistics
+- **Performs** : forward pass to generate predictions
+- **Displays** : for each sample : true label, predicted label, and raw probabilities
+- **Computes** : accuracy (correctly predicted / total samples)
+- **Calculates** : loss (BCE or CCE depending on the loss function used during training)

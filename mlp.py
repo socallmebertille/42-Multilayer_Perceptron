@@ -79,7 +79,7 @@ def main():
         # PHASE DE TRAINING (par défaut)
         X, norm_params = normalize(X)
         mlp = MyMLP(config, norm_params)
-        x_valid, y_valid, valid_set = load_dataset("datasets/valid_set.csv")
+        x_valid, y_valid, _ = load_dataset("datasets/valid_set.csv")
         x_valid = apply_normalization(x_valid, norm_params)
 
         if args.loss == 'categoricalCrossentropy' and Y.shape[1] == 1: # one-hot Y

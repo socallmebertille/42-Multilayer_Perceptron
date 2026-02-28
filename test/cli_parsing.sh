@@ -39,6 +39,8 @@ run_test "split : value < 0" true $EXEC --dataset data.csv --split -1,0.0
 run_test "split : value > 1" true $EXEC --dataset data.csv --split 0.9,0.1
 
 run_test "train : non-numeric layer" true $EXEC --dataset datasets/train_set.csv --layer a 24 24
+run_test "train : not enough layers" true $EXEC --dataset datasets/train_set.csv --layer 24
+run_test "train : too many layers" true $EXEC --dataset datasets/train_set.csv --layer 2 2 2 2 2 2 2 2 2
 run_test "train : layer < 0" true $EXEC --dataset datasets/train_set.csv --layer -1 24 24
 run_test "train : epochs < 0" true $EXEC --dataset datasets/train_set.csv --epochs -1
 run_test "train : epochs = 0" true $EXEC --dataset datasets/train_set.csv --epochs 0

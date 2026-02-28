@@ -94,6 +94,8 @@ def validate_config(config):
 
     if any(l <= 0 for l in net['layer']):
         raise ValueError("Invalid layer size")
+    if len(net['layer']) < 2 or len(net['layer']) > 5:
+        raise ValueError("Invalid number of layers (must be between 2 and 5)")
     if net['activation_hidden'] not in ['sigmoid', 'relu']:
         raise ValueError("Invalid activation_hidden")
     if net['weights_init'] not in ['heUniform', 'heNormal', 'xavierUniform', 'xavierNormal', 'random']:
