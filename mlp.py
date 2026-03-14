@@ -31,11 +31,11 @@ def main():
         print(f"Error: the file {data_file} does not exist.")
         return 1
     
-    if data_file != "datasets/test_set.csv" and args.predict:
+    if Path(data_file).name != "test_set.csv" and args.predict:
         print("Please, split your dataset with the correct flags before predict the set if you have not.")
         print("Or, give the correct set of test.")
         return 1
-    if data_file != "datasets/train_set.csv" and not args.split and not args.predict:
+    if Path(data_file).name != "train_set.csv" and not args.split and not args.predict:
         print("Please, split your dataset with the correct flags before training the set if you have not.")
         print("Or, give the correct set of training.")
         return 1
@@ -84,7 +84,6 @@ def main():
 
         if args.loss == 'categoricalCrossentropy' and Y.shape[1] == 1: # one-hot Y
             Y = np.hstack((1 - Y, Y))  # Convertir en one-hot pour 2 classes
-            y_valid = np.hstack((1 - y_valid, y_valid))  # Convertir en one-hot pour 2 classes
         
         print(f"x_train shape : {X.shape}")
         print(f"x_valid shape : {x_valid.shape}")

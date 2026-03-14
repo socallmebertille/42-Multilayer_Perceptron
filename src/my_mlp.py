@@ -108,7 +108,7 @@ class MyMLP:
             dW = self.activations[i].T @ delta / m
             
             # Gradient pour les biais : db = moyenne de delta
-            db = np.mean(delta, axis=0)
+            db = np.mean(delta, axis=0, keepdims=True)
             
             grads_w.insert(0, dW)  # Insérer au début (car on remonte)
             grads_b.insert(0, db)
@@ -163,8 +163,8 @@ class MyMLP:
 
         # Pour l'early stopping
         best_val_loss = float('inf')
-        patience = 5  # Nombre d'epochs sans amélioration avant d'arrêter
-        patience_counter = 0
+        best_epoch = 0
+        patience, patience_counter = 5, 0  # Nombre d'epochs sans amélioration avant d'arrêter
         best_weights, best_biases = None, None
         train_losses, valid_losses = [], []
         train_accuracies, valid_accuracies = [], []
@@ -214,15 +214,15 @@ class MyMLP:
             # Early stopping
             if valid_loss < best_val_loss:
                 best_val_loss = valid_loss
+                best_epoch = epoch + 1
                 patience_counter = 0
                 best_weights = [w.copy() for w in self.weights]
                 best_biases = [b.copy() for b in self.biases]
-                print(f"  → New best validation loss: {best_val_loss:.4f}")
             else:
                 patience_counter += 1
                 if patience_counter >= patience:
                     print(f"\n✓ Early stopping at epoch {epoch+1}")
-                    print(f"  Best validation loss was {best_val_loss:.4f} at epoch {epoch+1-patience}")
+                    print(f"  Best validation loss: {best_val_loss:.4f} (epoch {best_epoch})")
                     self.weights = best_weights
                     self.biases = best_biases
                     break
@@ -280,9 +280,7 @@ class MyMLP:
             loss = categorical_crossentropy(Y, y_pred_probs)
             print(f"> loss (categorical crossentropy) : {loss:.4f}")
         else:
-            mse = np.mean((y_pred_probs.T - Y.flatten()) ** 2)
             bce = binary_crossentropy(Y, y_pred_probs)
-            print(f"> loss (mean squared error) : {mse:.4f}")
             print(f"> loss (binary crossentropy) : {bce:.4f}")
 
 
